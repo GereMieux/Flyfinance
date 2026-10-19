@@ -8,6 +8,7 @@ import 'package:flyfinance/data/repository.dart';
 import 'package:flyfinance/ui/day_sales_screen.dart';
 import 'package:flyfinance/ui/new_sale_screen.dart';
 import 'package:flyfinance/ui/theme.dart';
+import 'package:flyfinance/ui/trash_screen.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -130,6 +131,48 @@ void main() {
     expect(find.text("Ventes d'aujourd'hui"), findsOneWidget);
     expect(find.text('6.000 FCFA'), findsOneWidget); // bénéfice du jour
     expect(find.text('2 vendus'), findsOneWidget);
+    await tester.tap(find.text('Client de passage'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 × Riz 25 kg'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(db.close);
+  });
+
+  testWidgets('la corbeille montre les ventes annulées', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+    final db = AppDatabase(NativeDatabase.memory());
+    final repo = Repository(db);
+    await tester.runAsync(() async {
+      final id = await repo.addProduct(
+        name: 'Riz 25 kg',
+        price: 15000,
+        initialQty: 10,
+      );
+      final riz = (await repo.products()).firstWhere((p) => p.id == id);
+      final sale = await repo.recordSale(
+        lines: [CartLine(riz, 2)],
+        paidNow: 30000,
+      );
+      await repo.cancelSale(sale);
+    });
+    final app = AppState(repo);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: app,
+        child: MaterialApp(theme: buildTheme(), home: const TrashScreen()),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text("Aujourd'hui : 1 vente annulée"), findsOneWidget);
+    expect(app.cancellationsSeenAt, isNotNull);
     await tester.tap(find.text('Client de passage'));
     await tester.pumpAndSettle();
     expect(find.text('2 × Riz 25 kg'), findsOneWidget);

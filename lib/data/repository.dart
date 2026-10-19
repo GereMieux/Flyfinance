@@ -93,6 +93,12 @@ class SaleDetail {
       summary.sale.cancelled ? 0 : lines.fold(0, (s, l) => s + l.margin);
 }
 
+class CancelledSale {
+  CancelledSale(this.detail, this.cancelledAt);
+  final SaleDetail detail;
+  final DateTime cancelledAt;
+}
+
 class PeriodStats {
   PeriodStats(this.sales, this.profit, this.cashIn, this.count);
   final int sales;
@@ -326,19 +332,37 @@ class Repository {
   Future<List<SaleDetail>> dayDetails(DateTime day) async {
     final from = DateTime(day.year, day.month, day.day);
     final to = DateTime(day.year, day.month, day.day + 1);
-    final list = await sales(from: from, to: to);
-    final rows =
-        await (db.select(db.saleLines).join([
-              innerJoin(db.sales, db.sales.id.equalsExp(db.saleLines.saleId)),
-              innerJoin(
-                db.products,
-                db.products.id.equalsExp(db.saleLines.productId),
-              ),
-            ])..where(
-              db.sales.createdAt.isBiggerOrEqualValue(from) &
-                  db.sales.createdAt.isSmallerThanValue(to),
-            ))
-            .get();
+    return _withLines(await sales(from: from, to: to));
+  }
+
+  /// Ventes annulées depuis `from`, de la plus récemment annulée à la plus
+  /// ancienne. L'heure d'annulation est celle du retour en stock.
+  Future<List<CancelledSale>> cancelledSales({DateTime? from}) async {
+    final when = db.stockMoves.createdAt.max();
+    final q = db.selectOnly(db.stockMoves)
+      ..addColumns([db.stockMoves.saleId, when])
+      ..where(db.stockMoves.reason.equals('annulation'))
+      ..groupBy([db.stockMoves.saleId]);
+    if (from != null) {
+      q.where(db.stockMoves.createdAt.isBiggerOrEqualValue(from));
+    }
+    final at = {
+      for (final r in await q.get())
+        r.read(db.stockMoves.saleId)!: r.read(when)!,
+    };
+    if (at.isEmpty) return [];
+    final list = (await sales()).where((s) => at.containsKey(s.sale.id));
+    return [
+      for (final d in await _withLines(list.toList()))
+        CancelledSale(d, at[d.summary.sale.id]!),
+    ]..sort((a, b) => b.cancelledAt.compareTo(a.cancelledAt));
+  }
+
+  Future<List<SaleDetail>> _withLines(List<SaleSummary> list) async {
+    final ids = [for (final s in list) s.sale.id];
+    final rows = await (db.select(db.saleLines).join([
+      innerJoin(db.products, db.products.id.equalsExp(db.saleLines.productId)),
+    ])..where(db.saleLines.saleId.isIn(ids))).get();
     final lines = <int, List<SaleLineDetail>>{};
     for (final r in rows) {
       final l = r.readTable(db.saleLines);

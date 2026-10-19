@@ -27,6 +27,14 @@ class AppState extends ChangeNotifier {
   AppState(this.repo);
   final Repository repo;
 
+  /// Dernière visite de la corbeille : les annulations plus récentes
+  /// s'affichent en notification sur l'accueil.
+  DateTime? cancellationsSeenAt;
+  void markCancellationsSeen(DateTime at) {
+    cancellationsSeenAt = at;
+    notifyListeners();
+  }
+
   bool _hideAmounts = false;
   bool get hideAmounts => _hideAmounts;
   void toggleAmounts() {

@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../data/repository.dart';
 import 'search_screen.dart';
 import 'stock_screen.dart';
+import 'trash_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -82,7 +83,9 @@ class SaleTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           backgroundColor: Palette.card,
           title: const Text('Annuler cette vente ?'),
-          content: const Text('Le stock sera remis et la dette effacée.'),
+          content: const Text(
+            'Le stock sera remis et la dette effacée. La vente restera visible dans la corbeille.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -182,6 +185,14 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 tooltip: 'Trier par statut',
                 onPressed: () => _pickFilter(all),
                 icon: const Icon(Icons.filter_list),
+              ),
+              IconButton(
+                tooltip: 'Ventes annulées',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TrashScreen()),
+                ),
+                icon: const Icon(Icons.delete_outline),
               ),
               IconButton(
                 tooltip: 'Rechercher',

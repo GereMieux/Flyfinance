@@ -9,6 +9,7 @@ import 'new_sale_screen.dart';
 import 'sales_list_screen.dart';
 import 'services/services_screen.dart';
 import 'stock_screen.dart';
+import 'trash_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -23,6 +24,7 @@ class _Dashboard {
     this.credit,
     this.todayStats,
     this.monthStats,
+    this.cancelledToday,
   );
   final PeriodStats stats;
   final List<int> bars;
@@ -33,6 +35,7 @@ class _Dashboard {
   final int credit;
   final PeriodStats todayStats;
   final PeriodStats monthStats;
+  final List<CancelledSale> cancelledToday;
 }
 
 class HomeScreen extends StatefulWidget {
@@ -66,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
       debts.fold(0, (s, d) => s + d.due),
       await repo.statsSince(today),
       await repo.statsSince(DateTime(now.year, now.month)),
+      await repo.cancelledSales(from: today),
     );
   }
 
@@ -96,6 +100,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                 ),
+                // Notification des annulations pas encore vues dans la corbeille.
+                Builder(
+                  builder: (context) {
+                    final seen = app.cancellationsSeenAt;
+                    final unseen = d.cancelledToday
+                        .where(
+                          (c) => seen == null || c.cancelledAt.isAfter(seen),
+                        )
+                        .length;
+                    return Badge.count(
+                      count: unseen,
+                      isLabelVisible: unseen > 0,
+                      child: IconButton(
+                        tooltip: 'Ventes annulées',
+                        onPressed: () => _open(const TrashScreen()),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    );
+                  },
+                ),
                 if (d.low.isNotEmpty)
                   Badge.count(
                     count: d.low.length,
@@ -107,6 +131,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
               ],
             ),
+            if (d.cancelledToday.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Material(
+                color: const Color(0xFF3A2E1B),
+                borderRadius: BorderRadius.circular(16),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: Palette.amber,
+                  ),
+                  title: Text(
+                    '${d.cancelledToday.length} vente${d.cancelledToday.length > 1 ? 's' : ''} annulée${d.cancelledToday.length > 1 ? 's' : ''} aujourd’hui',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Palette.amber,
+                    ),
+                  ),
+                  subtitle: Text(
+                    app.money(
+                      d.cancelledToday.fold(
+                        0,
+                        (s, c) => s + c.detail.summary.sale.total,
+                      ),
+                    ),
+                    style: const TextStyle(color: Palette.muted),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: Palette.amber,
+                  ),
+                  onTap: () => _open(const TrashScreen()),
+                ),
+              ),
+            ],
             if (d.low.isNotEmpty) ...[
               const SizedBox(height: 16),
               Material(
