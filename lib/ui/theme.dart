@@ -157,8 +157,10 @@ ThemeData buildTheme([Brightness brightness = Brightness.dark]) {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Palette.card,
-      indicatorColor: Palette.cardHigh,
+      indicatorColor: Palette.mintSoft,
       surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.black,
+      elevation: Palette.isDark ? 0 : 8,
       height: 68,
       labelTextStyle: WidgetStateProperty.resolveWith(
         (s) => TextStyle(
@@ -175,7 +177,7 @@ ThemeData buildTheme([Brightness brightness = Brightness.dark]) {
       iconTheme: WidgetStateProperty.resolveWith(
         (s) => IconThemeData(
           color: s.contains(WidgetState.selected)
-              ? Palette.text
+              ? Palette.mint
               : Palette.muted,
         ),
       ),

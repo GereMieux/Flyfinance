@@ -166,8 +166,20 @@ class _LockScreenState extends State<LockScreen> {
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
-                          color: Palette.amber,
                           borderRadius: BorderRadius.circular(24),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF6C35C), Color(0xFFE9A21F)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFE9A21F)
+                                  .withValues(alpha: 0.35),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
                         child: const Icon(
                           Icons.lock_outline,
