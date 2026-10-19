@@ -287,7 +287,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
         margin: const EdgeInsets.only(bottom: 10, right: 32),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Palette.text,
+          // Toujours claire, avec le texte foncé [Palette.ink], dans les deux modes.
+          color: Colors.white,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
@@ -296,7 +297,11 @@ class _AssistantScreenState extends State<AssistantScreen> {
           ),
         ),
         child: DefaultTextStyle(
-          style: const TextStyle(color: Palette.ink, fontSize: 15),
+          style: const TextStyle(
+            fontFamily: appFont,
+            color: Palette.ink,
+            fontSize: 15,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

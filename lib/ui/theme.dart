@@ -241,9 +241,10 @@ ThemeData buildTheme([Brightness brightness = Brightness.dark]) {
       backgroundColor: Palette.card,
       selectedColor: Palette.amber,
       side: BorderSide(color: Palette.line),
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
         fontFamily: appFont,
         fontWeight: FontWeight.w700,
+        color: Palette.text,
       ),
       secondaryLabelStyle: const TextStyle(
         fontFamily: appFont,

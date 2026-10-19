@@ -1,0 +1,56 @@
+# Construit l'APK Android à chaque modification de main et le publie
+# dans la version « apercu » du dépôt, avec un lien de téléchargement fixe.
+name: APK Android
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      - run: cp build/app/outputs/flutter-apk/app-release.apk flyfinance.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flyfinance-apk
+          path: flyfinance.apk
+
+      - name: Publier dans la version « apercu »
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apercu
+          name: FLYFINANCE (aperçu)
+          body: |
+            Dernière version construite depuis main (${{ github.sha }}).
+            Téléchargez flyfinance.apk sur votre téléphone Android et ouvrez-le pour l'installer.
+          prerelease: true
+          files: flyfinance.apk
