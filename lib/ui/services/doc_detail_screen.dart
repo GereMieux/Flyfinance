@@ -272,24 +272,16 @@ class _DetailView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _sharePdf(context),
-                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                  label: const Text('PDF'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _whatsapp(context),
-                  icon: const Icon(Icons.chat_outlined, size: 18),
-                  label: const Text('WhatsApp'),
-                ),
-              ),
-            ],
+          OutlinedButton.icon(
+            onPressed: () => _whatsapp(context),
+            icon: const Icon(Icons.chat_outlined),
+            label: const Text('Envoyer au client par WhatsApp'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => _sharePdf(context),
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            label: const Text('Partager ou imprimer en PDF'),
           ),
           const SizedBox(height: 12),
           Panel(
@@ -382,7 +374,7 @@ class _DetailView extends StatelessWidget {
             DocStatus.expire => FilledButton.icon(
               onPressed: () => _toInvoice(context),
               icon: const Icon(Icons.receipt_long_outlined),
-              label: const Text('Accepté : créer la facture'),
+              label: const Text('Le client accepte : faire la facture'),
             ),
             DocStatus.impayee ||
             DocStatus.partielle ||

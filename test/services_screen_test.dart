@@ -98,17 +98,13 @@ void main() {
       ),
     );
     await settle();
-    await tester.tap(find.text('Devis').first);
-    await settle();
-    await tester.tap(find.text('Nouveau devis'));
+    await tester.tap(find.text('Faire un devis'));
     await settle();
     await tester.tap(find.text('Choisir ou ajouter un client'));
     await settle();
     await tester.tap(find.text('Koffi Yao'));
     await settle();
-    await tester.tap(find.text('Ajouter une ligne'));
-    await settle();
-    await tester.tap(find.text('Ligne libre (texte et prix au choix)'));
+    await tester.tap(find.text('Ajouter un travail'));
     await settle();
     final fields = find.descendant(
       of: find.byType(AlertDialog),
@@ -120,11 +116,11 @@ void main() {
     await tester.tap(find.text('Valider'));
     await settle();
     expect(find.text('25.000 FCFA'), findsWidgets);
-    await tester.tap(find.text('Enregistrer le devis'));
+    await tester.tap(find.text('Enregistrer · 25.000 FCFA'));
     await settle();
     expect(find.text('DEV-${DateTime.now().year}-0001'), findsOneWidget);
-    expect(find.text('Accepté : créer la facture'), findsOneWidget);
-    await tester.tap(find.text('Accepté : créer la facture'));
+    expect(find.text('Le client accepte : faire la facture'), findsOneWidget);
+    await tester.tap(find.text('Le client accepte : faire la facture'));
     await settle();
     expect(find.text('FAC-${DateTime.now().year}-0001'), findsOneWidget);
 

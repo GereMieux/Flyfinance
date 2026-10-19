@@ -20,24 +20,12 @@ class ServicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void open(Widget w) =>
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => w));
     return DefaultTabController(
       length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Espace prestation'),
           actions: [
-            IconButton(
-              tooltip: 'Mes prestations',
-              onPressed: () => open(const CatalogueScreen()),
-              icon: const Icon(Icons.handyman_outlined),
-            ),
-            IconButton(
-              tooltip: 'Mon entreprise',
-              onPressed: () => open(const BusinessScreen()),
-              icon: const Icon(Icons.business_outlined),
-            ),
             const Padding(
               padding: EdgeInsets.only(right: 8),
               child: EyeButton(),
@@ -51,7 +39,7 @@ class ServicesScreen extends StatelessWidget {
             unselectedLabelColor: Palette.muted,
             labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
             tabs: [
-              Tab(text: 'Tableau'),
+              Tab(text: 'Accueil'),
               Tab(text: 'Devis'),
               Tab(text: 'Factures'),
               Tab(text: 'Agenda'),
@@ -135,32 +123,24 @@ class _DashboardTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          Row(
-            children: [
-              _Action(
-                'Devis',
-                Icons.request_quote_outlined,
-                () => _newDoc(context, DocKind.devis),
-                main: true,
-              ),
-              _Action(
-                'Facture',
-                Icons.receipt_long_outlined,
-                () => _newDoc(context, DocKind.facture),
-              ),
-              _Action(
-                'Rendez-vous',
-                Icons.event_outlined,
-                () => addAppointment(context),
-              ),
-              _Action(
-                'Prestations',
-                Icons.handyman_outlined,
-                () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CatalogueScreen()),
-                ),
-              ),
-            ],
+          _BigButton(
+            'Faire un devis',
+            'Le prix proposé au client, avant le travail',
+            Icons.request_quote_outlined,
+            () => _newDoc(context, DocKind.devis),
+            main: true,
+          ),
+          _BigButton(
+            'Faire une facture',
+            'Ce que le client doit payer',
+            Icons.receipt_long_outlined,
+            () => _newDoc(context, DocKind.facture),
+          ),
+          _BigButton(
+            'Noter un rendez-vous',
+            'Une intervention, un chantier',
+            Icons.event_outlined,
+            () => addAppointment(context),
           ),
           if (d.overdue.isNotEmpty) ...[
             const SizedBox(height: 18),
@@ -193,6 +173,28 @@ class _DashboardTab extends StatelessWidget {
               icon: Icons.event_available_outlined,
             ),
           for (final a in d.upcoming) _AppointmentTile(a),
+          const SizedBox(height: 18),
+          const Text(
+            'Réglages',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          _BigButton(
+            'Mes prestations et mes prix',
+            'Pour remplir vos devis en un geste',
+            Icons.handyman_outlined,
+            () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const CatalogueScreen())),
+          ),
+          _BigButton(
+            'Mon entreprise',
+            'Nom, téléphone, numéro Wave sur vos documents',
+            Icons.business_outlined,
+            () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const BusinessScreen())),
+          ),
         ],
       ),
     );
@@ -235,34 +237,59 @@ class _Mini extends StatelessWidget {
   );
 }
 
-class _Action extends StatelessWidget {
-  const _Action(this.label, this.icon, this.onTap, {this.main = false});
+/// Gros bouton pleine largeur, avec une phrase qui dit à quoi il sert.
+class _BigButton extends StatelessWidget {
+  const _BigButton(
+    this.label,
+    this.help,
+    this.icon,
+    this.onTap, {
+    this.main = false,
+  });
   final String label;
+  final String help;
   final IconData icon;
   final VoidCallback onTap;
   final bool main;
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: InkWell(
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Material(
+      color: main ? Palette.green : Palette.card,
       borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: main ? Palette.green : Palette.card,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(icon, size: 28),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Icon(icon, size: 32),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      help,
+                      style: TextStyle(
+                        color: main ? Palette.text : Palette.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-          ),
-        ],
+        ),
       ),
     ),
   );
@@ -282,25 +309,17 @@ class _DocsTabState extends State<_DocsTab> {
   String _filter = 'tous';
 
   Map<String, String> get _filters => widget.kind == DocKind.devis
-      ? const {
-          'tous': 'Tous',
-          'attente': 'En attente',
-          'facture': 'Facturés',
-          'clos': 'Refusés / expirés',
-        }
+      ? const {'tous': 'Tous', 'attente': 'En attente', 'facture': 'Acceptés'}
       : const {
           'tous': 'Toutes',
-          'aencaisser': 'À encaisser',
-          'retard': 'En retard',
+          'aencaisser': 'Pas encore payées',
           'payee': 'Payées',
         };
 
   bool _keep(DocSummary s) => switch (_filter) {
     'attente' => s.pendingQuote,
-    'facture' => s.status == DocStatus.facture,
-    'clos' => s.status == DocStatus.refuse || s.status == DocStatus.expire,
+    'facture' => s.status == DocStatus.facture || s.status == DocStatus.accepte,
     'aencaisser' => s.due > 0,
-    'retard' => s.status == DocStatus.enRetard,
     'payee' => s.status == DocStatus.payee,
     _ => true,
   };
@@ -539,7 +558,7 @@ class _AgendaTabState extends State<_AgendaTab> {
                   ),
                   const SizedBox(width: 6),
                   ChoiceChip(
-                    label: const Text('Tout l’historique'),
+                    label: const Text('Passés aussi'),
                     selected: _past,
                     onSelected: (_) => setState(() => _past = true),
                   ),

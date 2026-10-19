@@ -65,42 +65,45 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
     final app = context.read<AppState>();
     final list = await app.repo.services();
     if (!mounted) return;
-    final picked = await showModalBottomSheet<Object>(
-      context: context,
-      backgroundColor: Palette.ground,
-      isScrollControlled: true,
-      builder: (ctx) => SizedBox(
-        height: MediaQuery.of(ctx).size.height * 0.6,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit_note, color: Palette.mint),
-              title: const Text(
-                'Ligne libre (texte et prix au choix)',
-                style: TextStyle(
-                  color: Palette.mint,
-                  fontWeight: FontWeight.w700,
-                ),
+    // Catalogue vide : on va droit à la saisie, sans étape en plus.
+    final picked = list.isEmpty
+        ? 'libre'
+        : await showModalBottomSheet<Object>(
+            context: context,
+            backgroundColor: Palette.ground,
+            isScrollControlled: true,
+            builder: (ctx) => SizedBox(
+              height: MediaQuery.of(ctx).size.height * 0.6,
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.edit_note, color: Palette.mint),
+                    title: const Text(
+                      'Écrire un autre travail',
+                      style: TextStyle(
+                        color: Palette.mint,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onTap: () => Navigator.pop(ctx, 'libre'),
+                  ),
+                  if (list.isEmpty)
+                    const EmptyState(
+                      'Votre catalogue est vide. Ajoutez vos prestations depuis '
+                      '« Mes prestations » pour les retrouver ici.',
+                    ),
+                  for (final s in list)
+                    ListTile(
+                      leading: const Icon(Icons.handyman_outlined),
+                      title: Text(s.name),
+                      subtitle: Text('${fcfa(s.price)} / ${s.unit}'),
+                      onTap: () => Navigator.pop(ctx, s),
+                    ),
+                ],
               ),
-              onTap: () => Navigator.pop(ctx, 'libre'),
             ),
-            if (list.isEmpty)
-              const EmptyState(
-                'Votre catalogue est vide. Ajoutez vos prestations depuis '
-                '« Mes prestations » pour les retrouver ici.',
-              ),
-            for (final s in list)
-              ListTile(
-                leading: const Icon(Icons.handyman_outlined),
-                title: Text(s.name),
-                subtitle: Text('${fcfa(s.price)} / ${s.unit}'),
-                onTap: () => Navigator.pop(ctx, s),
-              ),
-          ],
-        ),
-      ),
-    );
+          );
     if (picked == null) return;
     final line = await _editLine(
       picked is Service
@@ -128,7 +131,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, set) => AlertDialog(
           backgroundColor: Palette.card,
-          title: const Text('Ligne'),
+          title: const Text('Travail ou produit'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -138,7 +141,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
                   autofocus: l == null,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
-                    hintText: 'Désignation (ex. Main d’œuvre)',
+                    hintText: 'Quoi ? (ex. Main d’œuvre)',
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -147,7 +150,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(labelText: 'Quantité'),
+                  decoration: const InputDecoration(labelText: 'Combien ?'),
                 ),
                 const SizedBox(height: 10),
                 Wrap(
@@ -167,7 +170,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
                   controller: price,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Prix unitaire',
+                    labelText: 'Prix pour 1',
                     suffixText: 'FCFA',
                   ),
                 ),
@@ -279,7 +282,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          const _Label('Client'),
+          const _Label('1. Pour qui ?'),
           Material(
             color: Palette.card,
             borderRadius: BorderRadius.circular(16),
@@ -303,7 +306,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
               },
             ),
           ),
-          const _Label('Prestations'),
+          const _Label('2. Quels travaux ?'),
           for (var i = 0; i < _lines.length; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -351,54 +354,74 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
           OutlinedButton.icon(
             onPressed: _addFromCatalogue,
             icon: const Icon(Icons.add),
-            label: const Text('Ajouter une ligne'),
+            label: const Text('Ajouter un travail'),
           ),
-          const _Label('Conditions'),
-          TilePanel(
-            child: Column(
+          const SizedBox(height: 12),
+          // Les réglages moins courants restent repliés pour garder l'écran
+          // simple ; la date est déjà remplie par défaut.
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+              childrenPadding: EdgeInsets.zero,
+              title: const Text(
+                'Plus d’options',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: const Text('Date, remise, TVA, note'),
               children: [
-                ListTile(
-                  leading: const Icon(Icons.event_outlined),
-                  title: Text(_quote ? 'Valable jusqu’au' : 'À payer avant le'),
-                  trailing: Text(
-                    _dueAt == null ? 'Aucune date' : dayDate(_dueAt!),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                TilePanel(
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.event_outlined),
+                        title: Text(
+                          _quote ? 'Valable jusqu’au' : 'À payer avant le',
+                        ),
+                        trailing: Text(
+                          _dueAt == null ? 'Aucune date' : dayDate(_dueAt!),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        onTap: _pickDate,
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.local_offer_outlined),
+                        title: const Text('Remise'),
+                        trailing: Text(
+                          _discount == 0 ? 'Aucune' : fcfa(_discount),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        onTap: () async {
+                          final v = await askNumber(
+                            context,
+                            title: 'Remise en FCFA',
+                            initial: _discount,
+                          );
+                          if (v != null) setState(() => _discount = v);
+                        },
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.account_balance_outlined),
+                        title: const Text(
+                          'Ajouter la TVA ($standardTaxRate %)',
+                        ),
+                        value: _tax,
+                        onChanged: (v) => setState(() => _tax = v),
+                      ),
+                    ],
                   ),
-                  onTap: _pickDate,
                 ),
-                ListTile(
-                  leading: const Icon(Icons.local_offer_outlined),
-                  title: const Text('Remise'),
-                  trailing: Text(
-                    _discount == 0 ? 'Aucune' : fcfa(_discount),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _note,
+                  maxLines: 3,
+                  minLines: 1,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText: 'Note pour le client (facultatif)',
                   ),
-                  onTap: () async {
-                    final v = await askNumber(
-                      context,
-                      title: 'Remise en FCFA',
-                      initial: _discount,
-                    );
-                    if (v != null) setState(() => _discount = v);
-                  },
-                ),
-                SwitchListTile(
-                  secondary: const Icon(Icons.account_balance_outlined),
-                  title: const Text('Ajouter la TVA ($standardTaxRate %)'),
-                  value: _tax,
-                  onChanged: (v) => setState(() => _tax = v),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _note,
-            maxLines: 3,
-            minLines: 1,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Note pour le client (facultatif)',
             ),
           ),
           const SizedBox(height: 16),
@@ -427,7 +450,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
             onPressed: _saving ? null : _save,
             child: Text(
               widget.existing == null
-                  ? (_quote ? 'Enregistrer le devis' : 'Enregistrer la facture')
+                  ? 'Enregistrer · ${fcfa(t.total)}'
                   : 'Enregistrer les changements',
             ),
           ),
