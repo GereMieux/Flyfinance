@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flyfinance/app_state.dart';
 import 'package:flyfinance/data/database.dart';
 import 'package:flyfinance/data/repository.dart';
+import 'package:flyfinance/data/shop_database.dart';
+import 'package:flyfinance/data/shop_repository.dart';
 import 'package:flyfinance/main.dart';
 import 'package:flyfinance/security/lock_service.dart';
 
@@ -82,7 +84,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      GereMieuxApp(repo: repo, lock: LockService(MemorySecretStore())),
+      GereMieuxApp(
+        repo: repo,
+        shop: ShopRepository(ShopDatabase(NativeDatabase.memory()), repo),
+        lock: LockService(MemorySecretStore()),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.text('Choisissez un code à 4 chiffres'), findsOneWidget);
