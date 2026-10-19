@@ -105,7 +105,7 @@ class _DaySalesScreenState extends State<DaySalesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Chiffre d'affaires",
+                      'Total des ventes',
                       style: TextStyle(color: Palette.muted),
                     ),
                     FittedBox(
@@ -127,7 +127,7 @@ class _DaySalesScreenState extends State<DaySalesScreen> {
                         ),
                         const SizedBox(width: 8),
                         statChip(
-                          'Encaissé',
+                          'Argent reçu',
                           app.money(d.stats.cashIn),
                           Palette.text,
                         ),

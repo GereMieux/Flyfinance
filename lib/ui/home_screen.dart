@@ -132,6 +132,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
             const SizedBox(height: 16),
+            // L'action la plus fréquente, en très grand pour tout le monde.
+            FilledButton.icon(
+              onPressed: () => _open(const NewSaleScreen()),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(68),
+                textStyle: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: const Icon(Icons.shopping_cart_outlined, size: 28),
+              label: const Text('Nouvelle vente'),
+            ),
+            const SizedBox(height: 16),
             _hero(app, d),
             const SizedBox(height: 18),
             _actions(d),
@@ -161,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   if (d.today.isEmpty)
                     const EmptyState(
-                      'Aucune vente aujourd’hui.\nTouchez « Vendre » pour commencer.',
+                      'Aucune vente aujourd’hui.\nTouchez « Nouvelle vente » pour commencer.',
                     ),
                   for (final s in d.today) SaleTile(s, dense: true),
                   Align(
@@ -182,9 +196,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _hero(AppState app, _Dashboard d) {
     const labels = {
-      Period.jour: ("Chiffre d'affaires d'aujourd'hui", 'Jour'),
-      Period.semaine: ("Chiffre d'affaires de la semaine", 'Semaine'),
-      Period.mois: ("Chiffre d'affaires du mois", 'Mois'),
+      Period.jour: ("Total des ventes d'aujourd'hui", 'Jour'),
+      Period.semaine: ('Total des ventes de la semaine', 'Semaine'),
+      Period.mois: ('Total des ventes du mois', 'Mois'),
     };
     final max = d.bars.fold<int>(1, (m, v) => v > m ? v : m);
     const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -279,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _mini('Bénéfice', app.money(d.stats.profit), Palette.text),
               const SizedBox(width: 8),
-              _mini('Encaissé', app.money(d.stats.cashIn), Palette.text),
+              _mini('Argent reçu', app.money(d.stats.cashIn), Palette.text),
               const SizedBox(width: 8),
               _mini(
                 'Crédits dehors',
@@ -376,7 +390,6 @@ class _HomeScreenState extends State<HomeScreen> {
       String label,
       IconData icon,
       VoidCallback onTap, {
-      bool main = false,
       int badge = 0,
     }) => Expanded(
       child: InkWell(
@@ -391,14 +404,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: main ? Palette.green : Palette.card,
+                  color: Palette.card,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(icon, size: 28),
               ),
             ),
             const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
           ],
         ),
       ),
@@ -406,10 +423,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       children: [
         action(
-          'Vendre',
-          Icons.shopping_cart_outlined,
-          () => _open(const NewSaleScreen()),
-          main: true,
+          'Ventes du jour',
+          Icons.receipt_long_outlined,
+          () => _open(const DaySalesScreen()),
         ),
         action(
           'Acheter',

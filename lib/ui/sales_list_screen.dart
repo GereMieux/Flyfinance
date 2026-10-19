@@ -244,7 +244,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        statChip('Encaissé', app.money(paid), Palette.mint),
+                        statChip('Argent reçu', app.money(paid), Palette.mint),
                         const SizedBox(width: 8),
                         statChip(
                           'Reste à payer',

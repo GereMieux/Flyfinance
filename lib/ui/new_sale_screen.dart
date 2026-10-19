@@ -438,63 +438,74 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s.product.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+              // Toucher l'article en ajoute un, comme le bouton +.
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: n >= s.qty ? null : () => _setQty(s, n + 1),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.product.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    inCart
-                        ? '${fcfa(_price(s.product))} × $n = ${fcfa(_price(s.product) * n)}'
-                        : '${fcfa(_price(s.product))} · ${s.qty} en stock',
-                    style: TextStyle(
-                      color: inCart
-                          ? Palette.mint
-                          : (s.low ? Palette.red : Palette.muted),
+                    Text(
+                      inCart
+                          ? '${fcfa(_price(s.product))} × $n = ${fcfa(_price(s.product) * n)}'
+                          : '${fcfa(_price(s.product))} · ${s.qty} en stock',
+                      style: TextStyle(
+                        color: inCart
+                            ? Palette.mint
+                            : (s.low ? Palette.red : Palette.muted),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            IconButton.outlined(
-              tooltip: 'Retirer un',
-              onPressed: n == 0 ? null : () => _setQty(s, n - 1),
-              icon: const Icon(Icons.remove),
-            ),
-            InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: s.qty == 0
-                  ? null
-                  : () async {
-                      final v = await askNumber(
-                        context,
-                        title: 'Quantité de ${s.product.name}',
-                        hint: 'Maximum ${s.qty}',
-                        initial: n == 0 ? null : n,
-                      );
-                      if (v != null) _setQty(s, v);
-                    },
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(
-                  child: Text(
-                    '$n',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+            // Les boutons − et la quantité n'apparaissent que pour les
+            // articles déjà dans le panier : moins de boutons à l'écran.
+            if (n > 0) ...[
+              IconButton.outlined(
+                tooltip: 'Retirer un',
+                iconSize: 26,
+                onPressed: () => _setQty(s, n - 1),
+                icon: const Icon(Icons.remove),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: s.qty == 0
+                    ? null
+                    : () async {
+                        final v = await askNumber(
+                          context,
+                          title: 'Quantité de ${s.product.name}',
+                          hint: 'Maximum ${s.qty}',
+                          initial: n == 0 ? null : n,
+                        );
+                        if (v != null) _setQty(s, v);
+                      },
+                child: SizedBox(
+                  width: 44,
+                  height: 48,
+                  child: Center(
+                    child: Text(
+                      '$n',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
             IconButton.filled(
               tooltip: 'Ajouter un',
+              iconSize: 28,
               style: IconButton.styleFrom(backgroundColor: Palette.green),
               onPressed: n >= s.qty ? null : () => _setQty(s, n + 1),
               icon: const Icon(Icons.add, color: Palette.text),
@@ -608,11 +619,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(62),
+                  textStyle: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 onPressed: needsClient || _saving
                     ? null
                     : () => _save(app, d, paid),
-                child: Text(_saving ? 'Enregistrement…' : 'Valider la vente'),
+                icon: const Icon(Icons.check_circle_outline, size: 26),
+                label: Text(_saving ? 'Enregistrement…' : 'Valider la vente'),
               ),
             ),
           ],
