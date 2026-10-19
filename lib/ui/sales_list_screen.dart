@@ -20,7 +20,7 @@ class SaleTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: dense ? 0 : 14),
       title: Text(
-        s.contact?.name ?? 'Client comptoir',
+        s.contact?.name ?? 'Client de passage',
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       subtitle: Text(
@@ -244,15 +244,15 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        _chip('Encaissé', app.money(paid), Palette.mint),
+                        statChip('Encaissé', app.money(paid), Palette.mint),
                         const SizedBox(width: 8),
-                        _chip(
+                        statChip(
                           'Reste à payer',
                           app.money(total - paid),
                           Palette.amber,
                         ),
                         const SizedBox(width: 8),
-                        _chip('Ventes', '${list.length}', Palette.text),
+                        statChip('Ventes', '${list.length}', Palette.text),
                       ],
                     ),
                   ],
@@ -287,29 +287,4 @@ class _SalesListScreenState extends State<SalesListScreen> {
       },
     );
   }
-
-  Widget _chip(String label, String value, Color color) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Palette.cardHigh,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Palette.muted),
-          ),
-          FittedBox(
-            child: Text(
-              value,
-              style: TextStyle(fontWeight: FontWeight.w700, color: color),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }

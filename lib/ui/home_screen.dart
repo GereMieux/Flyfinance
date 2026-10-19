@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../data/repository.dart';
 import 'credits_screen.dart';
+import 'day_sales_screen.dart';
 import 'new_sale_screen.dart';
 import 'sales_list_screen.dart';
 import 'stock_screen.dart';
@@ -13,12 +14,24 @@ import 'widgets.dart';
 enum Period { jour, semaine, mois }
 
 class _Dashboard {
-  _Dashboard(this.stats, this.bars, this.low, this.recent, this.credit);
+  _Dashboard(
+    this.stats,
+    this.bars,
+    this.low,
+    this.today,
+    this.credit,
+    this.todayStats,
+    this.monthStats,
+  );
   final PeriodStats stats;
   final List<int> bars;
   final List<ProductStock> low;
-  final List<SaleSummary> recent;
+
+  /// Toutes les ventes d'aujourd'hui, de la plus récente à la plus ancienne.
+  final List<SaleSummary> today;
   final int credit;
+  final PeriodStats todayStats;
+  final PeriodStats monthStats;
 }
 
 class HomeScreen extends StatefulWidget {
@@ -40,14 +53,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<_Dashboard> _load(Repository repo) async {
-    final stats = await repo.statsSince(_from(repo.now()));
+    final now = repo.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final stats = await repo.statsSince(_from(now));
     final debts = await repo.debtors();
     return _Dashboard(
       stats,
       await repo.dailySales(7),
       await repo.lowStock(),
-      (await repo.sales()).take(4).toList(),
+      await repo.sales(from: today),
       debts.fold(0, (s, d) => s + d.due),
+      await repo.statsSince(today),
+      await repo.statsSince(DateTime(now.year, now.month)),
     );
   }
 
@@ -89,10 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
-            _hero(app, d),
-            const SizedBox(height: 18),
-            _actions(d),
             if (d.low.isNotEmpty) ...[
               const SizedBox(height: 16),
               Material(
@@ -119,32 +132,45 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
             const SizedBox(height: 16),
+            _hero(app, d),
+            const SizedBox(height: 18),
+            _actions(d),
+            const SizedBox(height: 18),
+            _profits(app, d),
+            const SizedBox(height: 16),
             Panel(
               padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Activité récente',
-                          style: TextStyle(
+                          'Ventes du jour (${d.today.length})',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                       TextButton(
-                        onPressed: () => _open(const SalesListScreen()),
-                        child: const Text('Tout voir'),
+                        onPressed: () => _open(const DaySalesScreen()),
+                        child: const Text('Détail du jour'),
                       ),
                     ],
                   ),
-                  if (d.recent.isEmpty)
+                  if (d.today.isEmpty)
                     const EmptyState(
-                      'Aucune vente pour l’instant.\nTouchez « Vendre » pour commencer.',
+                      'Aucune vente aujourd’hui.\nTouchez « Vendre » pour commencer.',
                     ),
-                  for (final s in d.recent) SaleTile(s, dense: true),
+                  for (final s in d.today) SaleTile(s, dense: true),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => _open(const SalesListScreen()),
+                      child: const Text('Toutes les ventes'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -267,6 +293,45 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  /// Chiffres fixes du jour et du mois, quel que soit l'onglet choisi
+  /// au-dessus.
+  Widget _profits(AppState app, _Dashboard d) => Panel(
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text(
+            'Bénéfices',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+        ),
+        Row(
+          children: [
+            statChip(
+              'Ventes du jour',
+              app.money(d.todayStats.sales),
+              Palette.text,
+            ),
+            const SizedBox(width: 8),
+            statChip(
+              'Bénéfice du jour',
+              app.money(d.todayStats.profit),
+              Palette.mint,
+            ),
+            const SizedBox(width: 8),
+            statChip(
+              'Bénéfice du mois',
+              app.money(d.monthStats.profit),
+              Palette.mint,
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 
   Widget _mini(
     String label,
