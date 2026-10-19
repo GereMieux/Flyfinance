@@ -156,4 +156,27 @@ void main() {
     final today = await repo.cancelledSales(from: DateTime(2026, 10, 19));
     expect(today.single.detail.summary.sale.id, id);
   });
+
+  test(
+    'vider la corbeille efface les annulées sans toucher au stock',
+    () async {
+      final kept = await repo.recordSale(
+        lines: [CartLine(riz, 2)],
+        paidNow: 30000,
+      );
+      final gone = await repo.recordSale(
+        lines: [CartLine(riz, 3)],
+        contactId: fatou,
+        paidNow: 10000,
+      );
+      await repo.cancelSale(gone);
+      expect(await repo.stockOf(riz.id), 16);
+
+      expect(await repo.emptyTrash(), 1);
+      expect(await repo.cancelledSales(), isEmpty);
+      expect((await repo.sales()).single.sale.id, kept);
+      expect(await repo.stockOf(riz.id), 16);
+      expect(await repo.emptyTrash(), 0);
+    },
+  );
 }

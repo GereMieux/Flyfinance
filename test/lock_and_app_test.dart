@@ -38,6 +38,17 @@ void main() {
       expect(await lock.unlockWithPin('2580'), isTrue);
     });
 
+    test('le code est redemandé pour une action irréversible', () async {
+      final lock = LockService(MemorySecretStore());
+      await lock.setPin('2580');
+      expect(await lock.confirmPin('2580'), isTrue);
+      for (var i = 0; i < 5; i++) {
+        expect(await lock.confirmPin('0000'), isFalse);
+      }
+      expect(lock.lockoutRemaining, isNotNull);
+      expect(await lock.confirmPin('2580'), isFalse);
+    });
+
     test('verrouillage automatique après 5 minutes en arrière-plan', () async {
       var t = DateTime(2026, 10, 19, 10);
       final lock = LockService(MemorySecretStore(), now: () => t);
