@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flyfinance/app_state.dart';
 import 'package:flyfinance/data/database.dart';
 import 'package:flyfinance/data/repository.dart';
+import 'package:flyfinance/security/lock_service.dart';
 import 'package:flyfinance/ui/day_sales_screen.dart';
 import 'package:flyfinance/ui/new_sale_screen.dart';
 import 'package:flyfinance/ui/theme.dart';
@@ -176,6 +177,67 @@ void main() {
     await tester.tap(find.text('Client de passage'));
     await tester.pumpAndSettle();
     expect(find.text('2 × Riz 25 kg'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(db.close);
+  });
+
+  testWidgets('vider la corbeille demande le code secret', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+    final db = AppDatabase(NativeDatabase.memory());
+    final repo = Repository(db);
+    final lock = LockService(MemorySecretStore());
+    await tester.runAsync(() async {
+      await lock.setPin('2580');
+      final id = await repo.addProduct(
+        name: 'Riz 25 kg',
+        price: 15000,
+        initialQty: 10,
+      );
+      final riz = (await repo.products()).firstWhere((p) => p.id == id);
+      await repo.cancelSale(
+        await repo.recordSale(lines: [CartLine(riz, 1)], paidNow: 15000),
+      );
+    });
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AppState(repo)),
+          ChangeNotifierProvider.value(value: lock),
+        ],
+        child: MaterialApp(theme: buildTheme(), home: const TrashScreen()),
+      ),
+    );
+    Future<void> settle() async {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 300)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await settle();
+
+    Future<void> tryEmpty(String code) async {
+      await tester.tap(find.byTooltip('Vider la corbeille'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), code);
+      await tester.tap(find.text('Vider'));
+      await settle();
+    }
+
+    await tryEmpty('1111');
+    expect(
+      find.text('Code incorrect. La corbeille n’a pas été vidée.'),
+      findsOneWidget,
+    );
+    expect(await tester.runAsync(repo.cancelledSales), hasLength(1));
+
+    await tryEmpty('2580');
+    expect(await tester.runAsync(repo.cancelledSales), isEmpty);
+    expect(find.text('Aucune vente annulée.'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(db.close);

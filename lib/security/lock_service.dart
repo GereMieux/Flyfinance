@@ -103,14 +103,23 @@ class LockService extends ChangeNotifier {
   }
 
   Future<bool> unlockWithPin(String pin) async {
+    if (!await _checkPin(pin)) return false;
+    _unlocked = true;
+    notifyListeners();
+    return true;
+  }
+
+  /// Redemande le code avant une action irréversible (vider la corbeille),
+  /// avec le même blocage après 5 erreurs que l'écran de verrouillage.
+  Future<bool> confirmPin(String pin) => _checkPin(pin);
+
+  Future<bool> _checkPin(String pin) async {
     if (lockoutRemaining != null) return false;
     final salt = await store.read('pin_salt');
     final hash = await store.read('pin_hash');
     if (salt == null || hash == null) return false;
     if (hashPin(pin, salt) == hash) {
       _failures = 0;
-      _unlocked = true;
-      notifyListeners();
       return true;
     }
     _failures++;

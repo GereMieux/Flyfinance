@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../data/repository.dart';
+import '../security/lock_service.dart';
 import 'day_sales_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -30,7 +31,16 @@ class _TrashScreenState extends State<TrashScreen> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Ventes annulées')),
+      appBar: AppBar(
+        title: const Text('Ventes annulées'),
+        actions: [
+          IconButton(
+            tooltip: 'Vider la corbeille',
+            onPressed: _empty,
+            icon: const Icon(Icons.delete_forever_outlined),
+          ),
+        ],
+      ),
       body: Loader<List<CancelledSale>>(
         load: (r) => r.cancelledSales(),
         builder: (context, all) {
@@ -96,6 +106,72 @@ class _TrashScreenState extends State<TrashScreen> {
         },
       ),
     );
+  }
+
+  /// Vider la corbeille efface des preuves : seul le détenteur du code
+  /// secret peut le faire.
+  Future<void> _empty() async {
+    final app = context.read<AppState>();
+    final lock = context.read<LockService>();
+    final pin = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Palette.card,
+        title: const Text('Vider la corbeille ?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Les ventes annulées seront effacées pour toujours. '
+              'Tapez votre code secret pour confirmer.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pin,
+              autofocus: true,
+              obscureText: true,
+              maxLength: 4,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Code secret',
+                prefixIcon: Icon(Icons.lock_outline),
+                counterText: '',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Palette.red),
+            onPressed: () => Navigator.pop(ctx, pin.text),
+            child: const Text('Vider'),
+          ),
+        ],
+      ),
+    );
+    if (code == null) return;
+    if (!await lock.confirmPin(code)) {
+      if (mounted) {
+        toast(
+          context,
+          lock.lockoutRemaining != null
+              ? 'Trop d’erreurs. Réessayez dans une minute.'
+              : 'Code incorrect. La corbeille n’a pas été vidée.',
+        );
+      }
+      return;
+    }
+    final n = await app.repo.emptyTrash();
+    app.changed();
+    if (mounted) {
+      toast(context, '$n vente${n > 1 ? 's' : ''} effacée${n > 1 ? 's' : ''}.');
+    }
   }
 
   String _two(int n) => n.toString().padLeft(2, '0');
