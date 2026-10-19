@@ -14,7 +14,7 @@ Widget _label(String text) => Padding(
   padding: const EdgeInsets.only(top: 16, bottom: 6),
   child: Text(
     text,
-    style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.muted),
+    style: TextStyle(fontWeight: FontWeight.w700, color: Palette.muted),
   ),
 );
 
@@ -130,7 +130,7 @@ class _ShopItemFormState extends State<ShopItemForm> {
                   if (!editing) ...[
                     _label('Article du stock'),
                     if (free.isEmpty)
-                      const Text(
+                      Text(
                         'Tous vos articles sont déjà en ligne. Ajoutez-en dans Stock.',
                         style: TextStyle(color: Palette.muted),
                       )
@@ -330,7 +330,7 @@ class _PromotionFormState extends State<PromotionForm> {
               if (_target == 'categorie') ...[
                 const SizedBox(height: 8),
                 if (cats.isEmpty)
-                  const Text(
+                  Text(
                     'Aucune catégorie : donnez-en une à vos articles dans Catalogue.',
                     style: TextStyle(color: Palette.muted),
                   ),
@@ -456,7 +456,7 @@ class _PromotionFormState extends State<PromotionForm> {
                 ],
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'La promo commence à minuit le jour du début et s’arrête à minuit le jour de fin.',
                 style: TextStyle(color: Palette.muted, fontSize: 13),
               ),
@@ -658,8 +658,8 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                 ],
               ),
               if (info.methods.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     'Ajoutez vos numéros Orange Money et Wave dans Paiement et livraison (⚙).',
                     style: TextStyle(color: Palette.muted, fontSize: 13),
@@ -985,7 +985,7 @@ class _ShopSettingsScreenState extends State<ShopSettingsScreen> {
                 type: TextInputType.url,
                 hint: 'https://pay.wave.com/m/…',
               ),
-              const Text(
+              Text(
                 'Le client paie sur votre numéro, puis vous touchez « J’ai reçu le paiement ». Le paiement automatique sera branché avec vos comptes marchands Orange Money et Wave.',
                 style: TextStyle(color: Palette.muted, fontSize: 13),
               ),

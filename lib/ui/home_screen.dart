@@ -89,18 +89,32 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 23,
                   backgroundColor: Palette.cardHigh,
                   child: Icon(Icons.storefront, color: Palette.amber),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Ma boutique',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ma boutique',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      Text(
+                        longDate(app.repo.now()),
+                        style: TextStyle(fontSize: 13, color: Palette.muted),
+                      ),
+                    ],
                   ),
                 ),
+                const AppearanceButton(),
                 // Notification des annulations pas encore vues dans la corbeille.
                 Builder(
                   builder: (context) {
@@ -135,19 +149,16 @@ class _HomeScreenState extends State<HomeScreen> {
             if (d.cancelledToday.isNotEmpty) ...[
               const SizedBox(height: 16),
               Material(
-                color: const Color(0xFF3A2E1B),
+                color: Palette.amberSoft,
                 borderRadius: BorderRadius.circular(16),
                 child: ListTile(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  leading: const Icon(
-                    Icons.delete_outline,
-                    color: Palette.amber,
-                  ),
+                  leading: Icon(Icons.delete_outline, color: Palette.amber),
                   title: Text(
                     '${d.cancelledToday.length} vente${d.cancelledToday.length > 1 ? 's' : ''} annulée${d.cancelledToday.length > 1 ? 's' : ''} aujourd’hui',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: Palette.amber,
                     ),
@@ -159,12 +170,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         (s, c) => s + c.detail.summary.sale.total,
                       ),
                     ),
-                    style: const TextStyle(color: Palette.muted),
+                    style: TextStyle(color: Palette.muted),
                   ),
-                  trailing: const Icon(
-                    Icons.chevron_right,
-                    color: Palette.amber,
-                  ),
+                  trailing: Icon(Icons.chevron_right, color: Palette.amber),
                   onTap: () => _open(const TrashScreen()),
                 ),
               ),
@@ -172,24 +180,24 @@ class _HomeScreenState extends State<HomeScreen> {
             if (d.low.isNotEmpty) ...[
               const SizedBox(height: 16),
               Material(
-                color: const Color(0xFF3A1F1B),
+                color: Palette.redSoft,
                 borderRadius: BorderRadius.circular(16),
                 child: ListTile(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.warning_amber_rounded,
                     color: Palette.red,
                   ),
                   title: Text(
                     '${d.low.length} article${d.low.length > 1 ? 's' : ''} bientôt en rupture',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: Palette.red,
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_right, color: Palette.red),
+                  trailing: Icon(Icons.chevron_right, color: Palette.red),
                   onTap: () => _open(const StockScreen(onlyLow: true)),
                 ),
               ),
@@ -201,6 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(68),
                 textStyle: const TextStyle(
+                  fontFamily: appFont,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -220,10 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                leading: const Icon(
-                  Icons.handyman_outlined,
-                  color: Palette.mint,
-                ),
+                leading: Icon(Icons.handyman_outlined, color: Palette.mint),
                 title: const Text(
                   'Espace prestation',
                   style: TextStyle(fontWeight: FontWeight.w700),
@@ -241,10 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                leading: const Icon(
-                  Icons.event_note_outlined,
-                  color: Palette.amber,
-                ),
+                leading: Icon(Icons.event_note_outlined, color: Palette.amber),
                 title: const Text(
                   'Agenda et notes',
                   style: TextStyle(fontWeight: FontWeight.w700),
@@ -279,8 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   if (d.today.isEmpty)
-                    const EmptyState(
-                      'Aucune vente aujourd’hui.\nTouchez « Nouvelle vente » pour commencer.',
+                    EmptyState(
+                      'Aucune vente aujourd’hui.',
+                      icon: Icons.receipt_long_outlined,
+                      actionLabel: 'Faire une vente',
+                      onAction: () => _open(const NewSaleScreen()),
                     ),
                   for (final s in d.today) SaleTile(s, dense: true),
                   Align(
@@ -309,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     final today = DateTime.now();
     return Panel(
-      color: const Color(0xFF18302A),
+      color: Palette.hero,
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: SegmentedButton.styleFrom(
                     selectedBackgroundColor: Palette.amber,
                     selectedForegroundColor: Palette.ink,
-                    side: const BorderSide(color: Palette.line),
+                    side: BorderSide(color: Palette.line),
                   ),
                   segments: [
                     for (final p in Period.values)
@@ -339,21 +345,22 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           Text(
             labels[_period]!.$1,
-            style: const TextStyle(color: Palette.muted, fontSize: 14),
+            style: TextStyle(color: Palette.muted, fontSize: 14),
           ),
           const SizedBox(height: 2),
           FittedBox(
-            child: Text(
-              app.money(d.stats.sales),
-              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+            child: AnimatedMoney(
+              d.stats.sales,
+              style: const TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           Text(
             '${d.stats.count} vente${d.stats.count > 1 ? 's' : ''}',
-            style: const TextStyle(
-              color: Palette.mint,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(color: Palette.mint, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -368,20 +375,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Container(
-                            height: 4 + 44 * d.bars[i] / max,
-                            decoration: BoxDecoration(
-                              color: i == 6
-                                  ? Palette.amber
-                                  : const Color(0xFF2F4239),
-                              borderRadius: BorderRadius.circular(6),
+                          // Les barres montent doucement à l'ouverture.
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: d.bars[i] / max),
+                            duration: Motion.slow,
+                            curve: Motion.curve,
+                            builder: (_, v, child) =>
+                                SizedBox(height: 4 + 44 * v, child: child),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: i == 6 ? Palette.amber : Palette.bar,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             days[today.subtract(Duration(days: 6 - i)).weekday -
                                 1],
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: Palette.muted,
                             ),
@@ -459,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
     VoidCallback? onTap,
   }) => Expanded(
     child: Material(
-      color: const Color(0xFF1D2D26),
+      color: Palette.heroTile,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -469,10 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 12, color: Palette.muted),
-              ),
+              Text(label, style: TextStyle(fontSize: 12, color: Palette.muted)),
               FittedBox(
                 child: Text(
                   value,
@@ -526,6 +535,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         action(
           'Ventes du jour',

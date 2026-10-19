@@ -18,7 +18,7 @@ class AgendaScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Agenda et notes'),
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorColor: Palette.amber,
             labelColor: Palette.text,
             unselectedLabelColor: Palette.muted,

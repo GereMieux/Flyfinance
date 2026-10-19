@@ -153,7 +153,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     return Container(
-      color: const Color(0xFF0E1814),
+      color: Palette.deep,
       child: SafeArea(
         child: Column(
           children: [
@@ -161,11 +161,11 @@ class _AssistantScreenState extends State<AssistantScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Assistant',
                           style: TextStyle(
                             fontSize: 24,
@@ -175,7 +175,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                         Row(
                           children: [
                             Icon(Icons.circle, size: 8, color: Palette.mint),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             Text(
                               'Prêt, même hors ligne',
                               style: TextStyle(
@@ -192,7 +192,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     onPressed: () => app.setVoicePrefs(
                       voice: app.voice == 'female' ? 'male' : 'female',
                     ),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.graphic_eq,
                       color: Palette.amber,
                       size: 18,
@@ -230,8 +230,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (_turns.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 40),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
                       child: Text(
                         'Parlez comme à un employé :\n« Vends 3 sacs de riz à Fatou, elle paie la moitié par Wave »',
                         textAlign: TextAlign.center,
@@ -260,9 +260,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
     child: Container(
       margin: const EdgeInsets.only(bottom: 10, left: 48),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0xFF22332C),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: Palette.bubble,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
           bottomLeft: Radius.circular(20),
@@ -286,9 +286,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10, right: 32),
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Palette.text,
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
             bottomRight: Radius.circular(20),
@@ -412,7 +412,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     border: Border.all(
                       color: _listening
                           ? const Color(0xFF6B5420)
-                          : const Color(0xFF1E2A24),
+                          : Palette.cardHigh,
                       width: _listening ? 8 : 5,
                     ),
                   ),
@@ -427,8 +427,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
           ],
         ),
         if (_listening)
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
               'Je vous écoute…',
               style: TextStyle(color: Palette.muted),

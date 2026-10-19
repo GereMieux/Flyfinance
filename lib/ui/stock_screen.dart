@@ -58,8 +58,8 @@ class _StockScreenState extends State<StockScreen> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
               if (widget.purchaseMode)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     'Touchez l’article reçu du fournisseur.',
                     style: TextStyle(color: Palette.muted),
@@ -86,6 +86,7 @@ class _StockScreenState extends State<StockScreen> {
                   _onlyLow
                       ? 'Rien à commander pour l’instant.'
                       : 'Aucun article. Touchez « + Article » pour commencer.',
+                  icon: Icons.inventory_2_outlined,
                 ),
               for (final s in list)
                 Padding(
@@ -112,7 +113,7 @@ class _StockScreenState extends State<StockScreen> {
                       ),
                       subtitle: Text(
                         '${fcfa(s.product.price)} · alerte sous ${s.product.alertMin + 1} ${s.product.unit}',
-                        style: const TextStyle(color: Palette.muted),
+                        style: TextStyle(color: Palette.muted),
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -177,12 +178,12 @@ class _StockScreenState extends State<StockScreen> {
               subtitle: Text('${s.qty} ${s.product.unit} en stock'),
             ),
             ListTile(
-              leading: const Icon(Icons.add_box_outlined, color: Palette.mint),
+              leading: Icon(Icons.add_box_outlined, color: Palette.mint),
               title: const Text('Entrée en stock (achat)'),
               onTap: () => Navigator.pop(ctx, 'achat'),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.indeterminate_check_box_outlined,
                 color: Palette.red,
               ),
@@ -190,10 +191,7 @@ class _StockScreenState extends State<StockScreen> {
               onTap: () => Navigator.pop(ctx, 'perte'),
             ),
             ListTile(
-              leading: const Icon(
-                Icons.fact_check_outlined,
-                color: Palette.amber,
-              ),
+              leading: Icon(Icons.fact_check_outlined, color: Palette.amber),
               title: const Text('Inventaire : corriger la quantité comptée'),
               onTap: () => Navigator.pop(ctx, 'inventaire'),
             ),
@@ -303,6 +301,7 @@ class ProductStatsScreen extends StatelessWidget {
           if (list.every((s) => s.qty == 0)) {
             return const EmptyState(
               'Les statistiques apparaîtront après vos premières ventes.',
+              icon: Icons.bar_chart_rounded,
             );
           }
           return ListView(
@@ -343,10 +342,7 @@ class ProductStatsScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${s.qty} ${s.product.unit} vendus · marge ${app.money(s.margin)}',
-                        style: const TextStyle(
-                          color: Palette.muted,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Palette.muted, fontSize: 13),
                       ),
                     ],
                   ),

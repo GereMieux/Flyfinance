@@ -77,7 +77,7 @@ class _AgendaViewState extends State<AgendaView> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'agenda',
         backgroundColor: Palette.green,
-        foregroundColor: Palette.text,
+        foregroundColor: Colors.white,
         onPressed: () => addAppointment(context, day: _day),
         icon: const Icon(Icons.add),
         label: const Text('Rendez-vous'),
@@ -192,7 +192,7 @@ class _MonthGrid extends StatelessWidget {
                 child: Center(
                   child: Text(
                     l,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Palette.muted,
                       fontWeight: FontWeight.w700,
                     ),
@@ -412,7 +412,7 @@ class AppointmentTile extends StatelessWidget {
           subtitle: Text(sub),
           trailing: IconButton(
             tooltip: 'Supprimer',
-            icon: const Icon(Icons.delete_outline, color: Palette.muted),
+            icon: Icon(Icons.delete_outline, color: Palette.muted),
             onPressed: () async {
               if (await confirm(
                     context,

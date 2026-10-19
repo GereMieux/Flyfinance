@@ -61,7 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           : IconButton(
                               tooltip: 'Chercher à la voix',
                               onPressed: widget.onVoice,
-                              icon: const Icon(Icons.mic, color: Palette.amber),
+                              icon: Icon(Icons.mic, color: Palette.amber),
                             ),
                     ),
                   ),
@@ -121,7 +121,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     tiles.add(
                       _tile(
                         supplier ? 'Fournisseur' : 'Client',
-                        supplier ? const Color(0xFFCFA6E8) : Palette.amber,
+                        supplier ? Palette.purple : Palette.amber,
                         c.name,
                         c.phone ?? '',
                         () => _open(const CreditsScreen()),
@@ -154,23 +154,23 @@ class _SearchScreenState extends State<SearchScreen> {
                   children: [
                     if (q.isEmpty && widget.onVoice != null)
                       Panel(
-                        color: const Color(0xFF18302A),
-                        child: const Column(
+                        color: Palette.hero,
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Essayez à la voix',
                               style: TextStyle(color: Palette.muted),
                             ),
-                            SizedBox(height: 6),
-                            Text(
+                            const SizedBox(height: 6),
+                            const Text(
                               '« Combien de riz il reste ? »',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            Text(
+                            const Text(
                               '« Combien me doit Kouassi ? »',
                               style: TextStyle(
                                 fontSize: 16,
@@ -229,8 +229,8 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(sub, style: const TextStyle(color: Palette.muted)),
-        trailing: const Icon(Icons.chevron_right, color: Palette.muted),
+        subtitle: Text(sub, style: TextStyle(color: Palette.muted)),
+        trailing: Icon(Icons.chevron_right, color: Palette.muted),
       ),
     ),
   );

@@ -78,8 +78,8 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.edit_note, color: Palette.mint),
-                    title: const Text(
+                    leading: Icon(Icons.edit_note, color: Palette.mint),
+                    title: Text(
                       'Écrire un autre travail',
                       style: TextStyle(
                         color: Palette.mint,
@@ -332,7 +332,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
                             Text(
                               '${qtyText(_lines[i].qty)} ${_lines[i].unit} × '
                               '${fcfa(_lines[i].unitPrice)}',
-                              style: const TextStyle(color: Palette.muted),
+                              style: TextStyle(color: Palette.muted),
                             ),
                           ],
                         ),
@@ -345,7 +345,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
                     IconButton(
                       tooltip: 'Retirer',
                       onPressed: () => setState(() => _lines.removeAt(i)),
-                      icon: const Icon(Icons.close, color: Palette.muted),
+                      icon: Icon(Icons.close, color: Palette.muted),
                     ),
                   ],
                 ),
@@ -426,7 +426,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
           ),
           const SizedBox(height: 16),
           Panel(
-            color: const Color(0xFF18302A),
+            color: Palette.hero,
             child: Column(
               children: [
                 if (_discount > 0 || _tax)
@@ -468,7 +468,7 @@ class _Label extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
     child: Text(
       text,
-      style: const TextStyle(color: Palette.muted, fontWeight: FontWeight.w700),
+      style: TextStyle(color: Palette.muted, fontWeight: FontWeight.w700),
     ),
   );
 }

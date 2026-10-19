@@ -50,7 +50,7 @@ class _NotesViewState extends State<NotesView> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: lists ? 'lists' : 'notes',
         backgroundColor: Palette.green,
-        foregroundColor: Palette.text,
+        foregroundColor: Colors.white,
         onPressed: _create,
         icon: Icon(lists ? Icons.playlist_add : Icons.edit_note),
         label: Text(lists ? 'Liste' : 'Note'),
@@ -143,7 +143,7 @@ class _NoteCard extends StatelessWidget {
                       Row(
                         children: [
                           if (n.pinned)
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.only(right: 6),
                               child: Icon(
                                 Icons.push_pin,
@@ -170,7 +170,7 @@ class _NoteCard extends StatelessWidget {
                           preview,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Palette.muted),
+                          style: TextStyle(color: Palette.muted),
                         ),
                       ],
                       if (n.isList && e.items.isNotEmpty) ...[
@@ -188,26 +188,20 @@ class _NoteCard extends StatelessWidget {
                         Text(
                           '${e.doneCount} sur ${e.items.length} fait'
                           '${e.doneCount > 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Palette.muted,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Palette.muted),
                         ),
                       ],
                       const SizedBox(height: 6),
                       Text(
                         'Modifié le ${shortDate(n.updatedAt)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Palette.muted,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Palette.muted),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
                   tooltip: 'Options',
-                  icon: const Icon(Icons.more_vert, color: Palette.muted),
+                  icon: Icon(Icons.more_vert, color: Palette.muted),
                   onPressed: () => noteMenu(context, e),
                 ),
               ],
@@ -236,11 +230,8 @@ Future<bool> noteMenu(BuildContext context, NoteEntry e) async {
             onTap: () => Navigator.pop(ctx, 'pin'),
           ),
           ListTile(
-            leading: const Icon(Icons.delete_outline, color: Palette.red),
-            title: const Text(
-              'Supprimer',
-              style: TextStyle(color: Palette.red),
-            ),
+            leading: Icon(Icons.delete_outline, color: Palette.red),
+            title: Text('Supprimer', style: TextStyle(color: Palette.red)),
             onTap: () => Navigator.pop(ctx, 'delete'),
           ),
         ],
@@ -530,7 +521,7 @@ class _ListScreenState extends State<ListScreen> {
                         child: Text(
                           '${e.doneCount} sur ${e.items.length} fait'
                           '${e.doneCount > 1 ? 's' : ''}',
-                          style: const TextStyle(color: Palette.muted),
+                          style: TextStyle(color: Palette.muted),
                         ),
                       ),
                       if (e.doneCount > 0)
@@ -589,10 +580,7 @@ class _ListScreenState extends State<ListScreen> {
                               },
                               trailing: IconButton(
                                 tooltip: 'Retirer',
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Palette.muted,
-                                ),
+                                icon: Icon(Icons.close, color: Palette.muted),
                                 onPressed: () => guarded(
                                   context,
                                   () => repo.deleteNoteItem(i.id),

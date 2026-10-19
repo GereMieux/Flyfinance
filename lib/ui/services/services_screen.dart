@@ -25,20 +25,20 @@ class ServicesScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Espace prestation'),
-          actions: [
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: EyeButton(),
-            ),
+          actions: const [
+            Padding(padding: EdgeInsets.only(right: 8), child: EyeButton()),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             indicatorColor: Palette.amber,
             labelColor: Palette.text,
             unselectedLabelColor: Palette.muted,
-            labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-            tabs: [
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+            tabs: const [
               Tab(text: 'Accueil'),
               Tab(text: 'Devis'),
               Tab(text: 'Factures'),
@@ -77,12 +77,12 @@ class _DashboardTab extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           Panel(
-            color: const Color(0xFF18302A),
+            color: Palette.hero,
             padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Encaissé ce mois',
                   style: TextStyle(color: Palette.muted),
                 ),
@@ -97,7 +97,7 @@ class _DashboardTab extends StatelessWidget {
                 ),
                 Text(
                   'Aujourd’hui : ${app.money(d.cashInToday)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Palette.mint,
                     fontWeight: FontWeight.w700,
                   ),
@@ -146,11 +146,11 @@ class _DashboardTab extends StatelessWidget {
             const SizedBox(height: 18),
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Palette.red),
+                Icon(Icons.warning_amber_rounded, color: Palette.red),
                 const SizedBox(width: 8),
                 Text(
                   '${d.overdue.length} facture${d.overdue.length > 1 ? 's' : ''} en retard',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Palette.red,
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -202,32 +202,29 @@ class _DashboardTab extends StatelessWidget {
 }
 
 class _Mini extends StatelessWidget {
-  const _Mini(this.label, this.value, {this.color = Palette.text});
+  const _Mini(this.label, this.value, {this.color});
   final String label;
   final String value;
-  final Color color;
+  final Color? color;
   @override
   Widget build(BuildContext context) => Expanded(
     child: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D2D26),
+        color: Palette.heroTile,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Palette.muted),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Palette.muted)),
           FittedBox(
             child: Text(
               value,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: color,
+                color: color ?? Palette.text,
               ),
             ),
           ),
@@ -332,7 +329,7 @@ class _DocsTabState extends State<_DocsTab> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: widget.kind.key,
         backgroundColor: Palette.green,
-        foregroundColor: Palette.text,
+        foregroundColor: Colors.white,
         onPressed: () => _newDoc(context, widget.kind),
         icon: const Icon(Icons.add),
         label: Text(quote ? 'Nouveau devis' : 'Nouvelle facture'),
@@ -390,7 +387,7 @@ class _DocsTabState extends State<_DocsTab> {
                   child: Text(
                     '${list.length} ${quote ? 'devis' : 'facture${list.length > 1 ? 's' : ''}'}'
                     ' · ${quote ? 'total' : 'reste à encaisser'} ${app.money(sum)}',
-                    style: const TextStyle(color: Palette.muted),
+                    style: TextStyle(color: Palette.muted),
                   ),
                 ),
               if (list.isEmpty)
