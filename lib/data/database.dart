@@ -1,6 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'services_tables.dart';
+
+export 'services_tables.dart';
+
 part 'database.g.dart';
 
 /// Articles vendus en boutique. Les prix sont en FCFA (entiers, pas de centimes).
@@ -71,7 +75,20 @@ class StockMoves extends Table {
 }
 
 @DriftDatabase(
-  tables: [Products, Contacts, Sales, SaleLines, Payments, StockMoves],
+  tables: [
+    Products,
+    Contacts,
+    Sales,
+    SaleLines,
+    Payments,
+    StockMoves,
+    Services,
+    ServiceDocs,
+    ServiceDocLines,
+    ServicePayments,
+    Appointments,
+    Settings,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
@@ -95,10 +112,21 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // Espace prestation.
+        await m.createTable(services);
+        await m.createTable(serviceDocs);
+        await m.createTable(serviceDocLines);
+        await m.createTable(servicePayments);
+        await m.createTable(appointments);
+        await m.createTable(settings);
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },

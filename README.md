@@ -31,6 +31,22 @@ entièrement hors ligne.
   « Combien j'ai vendu aujourd'hui ? »), demande toujours « Oui / Non » avant
   d'écrire, et répond à voix haute avec une voix féminine ou masculine.
   Langues de l'écoute et de la voix : français, anglais, arabe, espagnol.
+- **Espace prestation** (pour artisans, réparateurs, couturières,
+  consultants…), depuis l'accueil :
+  - **Devis** numérotés (DEV-2026-0001), lignes tirées du catalogue ou libres,
+    quantités décimales (2,5 m²), remise, TVA 18 % au choix, date de validité,
+    statuts Brouillon / Envoyé / Accepté / Refusé / Expiré, transformation en
+    facture d'un geste.
+  - **Factures** numérotées (FAC-2026-0001), date limite de paiement,
+    acomptes et paiements en plusieurs fois (espèces, Orange Money, MTN,
+    Moov, Wave), statuts Impayée / Acompte reçu / En retard / Payée /
+    Annulée. Une facture ne se supprime pas, elle s'annule.
+  - **PDF** propre à partager ou imprimer, et message **WhatsApp** prérempli.
+  - **Tableau** : encaissé du jour et du mois, facturé du mois, reste à
+    encaisser, devis en attente, factures en retard, prochains rendez-vous.
+  - **Agenda** des interventions, **catalogue** des prestations et **fiche
+    entreprise** (nom, téléphone, RCCM, comment vous payer, conditions)
+    imprimée en tête des documents.
 
 ## Pas encore fait
 
@@ -57,5 +73,6 @@ Organisation du code :
 | `lib/data/` | Tables (drift) et `Repository` : toutes les règles métier |
 | `lib/security/` | Code PIN, empreinte, clé de la base |
 | `lib/voice/` | Analyseur de phrases, assistant, micro et voix |
-| `lib/ui/` | Écrans |
+| `lib/services/` | PDF des devis et factures |
+| `lib/ui/` | Écrans (`lib/ui/services/` : espace prestation) |
 | `test/` | Tests des règles, de l'assistant, du verrouillage et de l'écran d'accueil |
