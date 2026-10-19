@@ -48,6 +48,17 @@ entièrement hors ligne.
     entreprise** (nom, téléphone, RCCM, comment vous payer, conditions)
     imprimée en tête des documents.
 
+- **Vente en ligne** (onglet « En ligne ») : catalogue tiré du stock avec
+  catégories, marques, tailles, couleurs, description et prix en ligne ;
+  promotions en pourcentage ou prix promo, sur un article, une catégorie ou
+  toute la boutique, avec date de début et de fin, et soldes ; annonces ;
+  vitrine telle que la voit le client ; partage du catalogue sur WhatsApp.
+  Commandes avec taille, couleur, adresse et frais de livraison, payées par
+  Orange Money, Wave ou à la livraison ; demande de paiement envoyée par
+  WhatsApp ; le stock commandé est réservé, et la commande livrée devient une
+  vente de la boutique (stock, tableau de bord, carnet d'adresses). Ces
+  données sont dans une deuxième base chiffrée (`flyfinance_en_ligne`).
+
 ## Pas encore fait
 
 - Compréhension des phrases libres par l'IA en ligne (Claude), via un serveur
@@ -56,12 +67,16 @@ entièrement hors ligne.
   un peu d'anglais.
 - Sauvegarde et synchronisation entre téléphones (Supabase).
 - Vendeurs avec droits limités, impression de reçus, export PDF / Excel.
+- Paiement Orange Money et Wave automatique (API marchandes) : pour l'instant
+  le client paie sur le numéro du commerçant, qui confirme la réception.
+- Photos des articles et boutique en ligne publique (site web où le client
+  commande lui-même).
 
 ## Développer
 
 ```sh
 flutter pub get
-dart run build_runner build   # régénère lib/data/database.g.dart
+dart run build_runner build   # régénère lib/data/*.g.dart
 flutter test
 flutter build apk --release
 ```

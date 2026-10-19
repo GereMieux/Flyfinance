@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'assistant_screen.dart';
 import 'credits_screen.dart';
 import 'home_screen.dart';
+import 'online_shop_screen.dart';
 import 'search_screen.dart';
 import 'stock_screen.dart';
 import 'theme.dart';
 
-/// Barre d'onglets : Accueil, Recherche, Vocal (au centre), Stock, Crédits.
+/// Barre d'onglets : Accueil, Recherche, Vocal (au centre), Stock, Crédits,
+/// En ligne.
 class Shell extends StatefulWidget {
   const Shell({super.key});
   @override
@@ -25,6 +27,7 @@ class _ShellState extends State<Shell> {
       const AssistantScreen(),
       const StockScreen(embedded: true),
       const CreditsScreen(embedded: true),
+      const OnlineShopScreen(embedded: true),
     ];
     return Scaffold(
       body: pages[_tab],
@@ -52,6 +55,11 @@ class _ShellState extends State<Shell> {
           NavigationDestination(
             icon: Icon(Icons.credit_card),
             label: 'Crédits',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shopping_bag_outlined),
+            selectedIcon: Icon(Icons.shopping_bag),
+            label: 'En ligne',
           ),
         ],
       ),
