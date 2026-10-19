@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gere_mieux/voice/intent_parser.dart';
+import 'package:flyfinance/voice/intent_parser.dart';
 
 void main() {
   final p = IntentParser();

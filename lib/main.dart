@@ -63,7 +63,7 @@ class _GereMieuxAppState extends State<GereMieuxApp>
         ChangeNotifierProvider.value(value: widget.lock),
       ],
       child: MaterialApp(
-        title: 'Gère-mieux',
+        title: 'FLYFINANCE',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
         home: Consumer<LockService>(

@@ -152,14 +152,16 @@ class Assistant {
     final debtors = await repo.debtors();
     if (i.client != null) {
       final d = bestMatch(i.client!, debtors, (d) => d.contact.name);
-      if (d == null)
+      if (d == null) {
         return AssistantReply('${_title(i.client!)} ne vous doit rien.');
+      }
       return AssistantReply(
         '${d.contact.name} vous doit ${spokenFcfa(d.due)}.',
       );
     }
-    if (debtors.isEmpty)
+    if (debtors.isEmpty) {
       return AssistantReply('Personne ne vous doit d’argent.');
+    }
     final total = debtors.fold<int>(0, (s, d) => s + d.due);
     return AssistantReply(
       '${debtors.length} client${debtors.length > 1 ? 's' : ''} vous '

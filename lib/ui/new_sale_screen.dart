@@ -362,8 +362,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       toast(context, 'Vente enregistrée.');
       Navigator.pop(context);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         toast(context, e.toString().replaceFirst(RegExp(r'^\w+Error: '), ''));
+      }
       setState(() => _saving = false);
     }
   }

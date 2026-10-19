@@ -52,8 +52,9 @@ class _LockScreenState extends State<LockScreen> {
           : 'Tapez le même code une 2e fois';
     }
     final wait = _lock.lockoutRemaining;
-    if (wait != null)
+    if (wait != null) {
       return 'Trop d’essais. Réessayez dans ${wait.inSeconds + 1} s';
+    }
     return 'Entrez votre code';
   }
 
@@ -165,7 +166,7 @@ class _LockScreenState extends State<LockScreen> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Gère-mieux',
+                        'FLYFINANCE',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,

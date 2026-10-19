@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gere_mieux/data/database.dart';
-import 'package:gere_mieux/data/repository.dart';
+import 'package:flyfinance/data/database.dart';
+import 'package:flyfinance/data/repository.dart';
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;

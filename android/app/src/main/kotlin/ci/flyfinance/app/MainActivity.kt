@@ -1,4 +1,4 @@
-package ci.geremieux.gere_mieux
+package ci.flyfinance.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -1,4 +1,4 @@
-# Gère-mieux
+# FLYFINANCE
 
 Application mobile de gestion pour boutiques et grossistes (Côte d'Ivoire, FCFA) :
 ventes, stock, crédits clients, recherche et assistant vocal. Elle fonctionne

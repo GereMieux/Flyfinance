@@ -2,11 +2,11 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gere_mieux/app_state.dart';
-import 'package:gere_mieux/data/database.dart';
-import 'package:gere_mieux/data/repository.dart';
-import 'package:gere_mieux/main.dart';
-import 'package:gere_mieux/security/lock_service.dart';
+import 'package:flyfinance/app_state.dart';
+import 'package:flyfinance/data/database.dart';
+import 'package:flyfinance/data/repository.dart';
+import 'package:flyfinance/main.dart';
+import 'package:flyfinance/security/lock_service.dart';
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;

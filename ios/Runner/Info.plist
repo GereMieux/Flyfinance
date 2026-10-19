@@ -7,13 +7,13 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>La reconnaissance vocale transforme vos paroles en commandes.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Face ID sert à déverrouiller Gère-mieux.</string>
+	<string>Face ID sert à déverrouiller FLYFINANCE.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Gère-mieux</string>
+	<string>FLYFINANCE</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -21,7 +21,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>gere_mieux</string>
+	<string>flyfinance</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

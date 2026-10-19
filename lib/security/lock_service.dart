@@ -137,7 +137,7 @@ class LockService extends ChangeNotifier {
     if (auth == null || !await hasPin()) return false;
     try {
       final ok = await auth.authenticate(
-        localizedReason: 'Déverrouiller Gère-mieux',
+        localizedReason: 'Déverrouiller FLYFINANCE',
         biometricOnly: true,
       );
       if (ok) {

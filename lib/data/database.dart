@@ -82,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
     final escaped = key.replaceAll("'", "''");
     return AppDatabase(
       driftDatabase(
-        name: 'gere_mieux',
+        name: 'flyfinance',
         native: DriftNativeOptions(
           setup: (db) {
             db.execute("PRAGMA key = '$escaped';");
