@@ -742,7 +742,8 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
         address: _address.text,
         note: _note.text,
         payMethod: _method!,
-        deliveryFee: int.tryParse(_fee.text) ?? 0,
+        deliveryFee:
+            int.tryParse(_fee.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
         items: _lines,
       );
       app.changed();
@@ -1003,10 +1004,15 @@ class _ShopSettingsScreenState extends State<ShopSettingsScreen> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () async {
-                  await shop.saveInfo({
-                    for (final e in _c.entries) e.key: e.value.text,
-                    'cod': _cod! ? 'oui' : 'non',
-                  });
+                  try {
+                    await shop.saveInfo({
+                      for (final e in _c.entries) e.key: e.value.text,
+                      'cod': _cod! ? 'oui' : 'non',
+                    });
+                  } catch (e) {
+                    if (context.mounted) toast(context, errorText(e));
+                    return;
+                  }
                   app.changed();
                   if (context.mounted) {
                     Navigator.pop(context);

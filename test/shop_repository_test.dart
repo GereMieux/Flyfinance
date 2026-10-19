@@ -203,4 +203,43 @@ void main() {
     expect(cat, contains('Robe wax'));
     expect(cat, isNot(contains('Baskets')));
   });
+
+  test('réglages : numéros nettoyés, lien Wave vérifié', () async {
+    await shop.saveInfo({
+      'wave_number': '07 07-00 00 01',
+      'delivery_fee': '1 500',
+    });
+    final info = await shop.info();
+    expect(info.waveNumber, '0707000001');
+    expect(info.deliveryFee, 1500);
+    for (final bad in [
+      'http://pay.wave.com/m/abc',
+      'https://wave.com.arnaque.ci/m/abc',
+      'javascript:alert(1)',
+    ]) {
+      expect(() => shop.saveInfo({'wave_link': bad}), throwsArgumentError);
+    }
+    await shop.saveInfo({'wave_link': 'https://pay.wave.com/m/abc'});
+    expect((await shop.info()).waveLink, 'https://pay.wave.com/m/abc');
+  });
+
+  test('refuse une quantité nulle ou des frais négatifs', () async {
+    expect(
+      () async => shop.createOrder(
+        customerName: 'Awa',
+        payMethod: 'wave',
+        items: [OrderItem(await item(robe), 0)],
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () async => shop.createOrder(
+        customerName: 'Awa',
+        payMethod: 'wave',
+        deliveryFee: -500,
+        items: [OrderItem(await item(robe), 1)],
+      ),
+      throwsArgumentError,
+    );
+  });
 }

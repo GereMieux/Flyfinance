@@ -337,12 +337,37 @@ class ShopRepository {
     for (final s in await db.select(db.shopSettings).get()) s.key: s.value,
   });
 
-  Future<void> saveInfo(Map<String, String> values) => db.batch(
-    (b) => b.insertAllOnConflictUpdate(db.shopSettings, [
-      for (final e in values.entries)
-        ShopSettingsCompanion.insert(key: e.key, value: e.value.trim()),
-    ]),
-  );
+  /// Enregistre les réglages. Les numéros ne gardent que les chiffres et
+  /// le lien Wave doit être un lien https de Wave, pour qu'aucun lien
+  /// douteux ne parte vers les clients.
+  Future<void> saveInfo(Map<String, String> values) {
+    final clean = <String, String>{};
+    for (final e in values.entries) {
+      var v = e.value.trim();
+      if (e.key.endsWith('_number') || e.key == 'whatsapp') {
+        v = v.replaceAll(RegExp(r'[^0-9+]'), '');
+      }
+      if (e.key == 'delivery_fee') v = v.replaceAll(RegExp(r'[^0-9]'), '');
+      if (e.key == 'wave_link' && v.isNotEmpty) {
+        final uri = Uri.tryParse(v);
+        final host = uri?.host ?? '';
+        if (uri == null ||
+            uri.scheme != 'https' ||
+            !(host == 'wave.com' || host.endsWith('.wave.com'))) {
+          throw ArgumentError(
+            'Le lien Wave doit commencer par https:// et venir de wave.com.',
+          );
+        }
+      }
+      clean[e.key] = v;
+    }
+    return db.batch(
+      (b) => b.insertAllOnConflictUpdate(db.shopSettings, [
+        for (final e in clean.entries)
+          ShopSettingsCompanion.insert(key: e.key, value: e.value),
+      ]),
+    );
+  }
 
   // ---------- Commandes ----------
 
@@ -382,6 +407,14 @@ class ShopRepository {
       throw ArgumentError('Indiquez le nom du client.');
     }
     if (items.isEmpty) throw ArgumentError('La commande est vide.');
+    if (items.any((i) => i.qty <= 0)) {
+      throw ArgumentError('Chaque quantité doit être d’au moins 1.');
+    }
+    if (deliveryFee < 0) {
+      throw ArgumentError(
+        'Les frais de livraison ne peuvent pas être négatifs.',
+      );
+    }
     if (!onlinePayMethods.containsKey(payMethod)) {
       throw ArgumentError('Mode de paiement inconnu : $payMethod');
     }
