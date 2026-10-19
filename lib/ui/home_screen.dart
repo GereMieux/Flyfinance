@@ -7,6 +7,7 @@ import 'credits_screen.dart';
 import 'day_sales_screen.dart';
 import 'new_sale_screen.dart';
 import 'sales_list_screen.dart';
+import 'services/services_screen.dart';
 import 'stock_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -149,6 +150,27 @@ class _HomeScreenState extends State<HomeScreen> {
             _hero(app, d),
             const SizedBox(height: 18),
             _actions(d),
+            const SizedBox(height: 16),
+            Material(
+              color: Palette.card,
+              borderRadius: BorderRadius.circular(16),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                leading: const Icon(
+                  Icons.handyman_outlined,
+                  color: Palette.mint,
+                ),
+                title: const Text(
+                  'Espace prestation',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text('Devis, factures, rendez-vous'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(const ServicesScreen()),
+              ),
+            ),
             const SizedBox(height: 18),
             _profits(app, d),
             const SizedBox(height: 16),

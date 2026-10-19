@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -77,6 +78,10 @@ class _GereMieuxAppState extends State<GereMieuxApp>
         title: 'FLYFINANCE',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
+        // Calendriers et heures en français (choix des dates d'échéance).
+        locale: const Locale('fr'),
+        supportedLocales: const [Locale('fr'), Locale('en')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         home: Consumer<LockService>(
           builder: (_, lock, _) =>
               lock.unlocked ? const Shell() : const LockScreen(),
