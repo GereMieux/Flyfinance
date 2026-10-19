@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
-import 'credits_screen.dart';
+import 'accounts/client_account_screen.dart';
+import 'accounts/supplier_account_screen.dart';
 import 'sales_list_screen.dart';
 import 'stock_screen.dart';
 import 'theme.dart';
@@ -123,8 +124,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         supplier ? 'Fournisseur' : 'Client',
                         supplier ? Palette.purple : Palette.amber,
                         c.name,
-                        c.phone ?? '',
-                        () => _open(const CreditsScreen()),
+                        [?c.phone, ?c.address].join(' · '),
+                        () => _open(
+                          supplier
+                              ? SupplierAccountScreen(c.id)
+                              : ClientAccountScreen(c.id),
+                        ),
                       ),
                     );
                   }

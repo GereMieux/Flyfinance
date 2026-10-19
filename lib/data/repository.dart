@@ -200,6 +200,7 @@ class Repository {
   Future<int> addContact(
     String name, {
     String? phone,
+    String? address,
     String kind = 'client',
   }) => db
       .into(db.contacts)
@@ -207,6 +208,7 @@ class Repository {
         ContactsCompanion.insert(
           name: name.trim(),
           phone: Value(phone),
+          address: Value(address),
           kind: Value(kind),
         ),
       );
@@ -484,7 +486,25 @@ class Repository {
                       : p.createdAt.isSmallerThanValue(to)),
             ))
             .get();
-    final cashIn = pays.fold<int>(0, (s, p) => s + p.amount);
+    // Une vente réglée avec la provision du client n'est pas de l'argent
+    // reçu ce jour-là : la provision a été comptée quand elle a été déposée.
+    var cashIn = pays
+        .where((p) => p.method != 'provision')
+        .fold<int>(0, (s, p) => s + p.amount);
+    final deposits =
+        await (db.select(db.accountEntries)..where(
+              (e) =>
+                  e.cancelled.equals(false) &
+                  e.kind.isIn(['provision', 'rendue']) &
+                  e.createdAt.isBiggerOrEqualValue(from) &
+                  (to == null
+                      ? const Constant(true)
+                      : e.createdAt.isSmallerThanValue(to)),
+            ))
+            .get();
+    for (final e in deposits) {
+      cashIn += e.kind == 'provision' ? e.amount : -e.amount;
+    }
     return PeriodStats(total, total - cost, cashIn, list.length);
   }
 

@@ -8,6 +8,8 @@
 	<string>La reconnaissance vocale transforme vos paroles en commandes.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID sert à déverrouiller FLYFINANCE.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Vos vidéos et photos servent à annoncer les arrivages à vos clients.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

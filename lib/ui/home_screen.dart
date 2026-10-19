@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
+import '../data/accounts_repository.dart';
 import '../data/repository.dart';
+import 'accounts/contacts_screen.dart';
+import 'accounts/reminders_screen.dart';
 import 'agenda/agenda_screen.dart';
 import 'credits_screen.dart';
 import 'day_sales_screen.dart';
@@ -26,6 +29,7 @@ class _Dashboard {
     this.todayStats,
     this.monthStats,
     this.cancelledToday,
+    this.reminders,
   );
   final PeriodStats stats;
   final List<int> bars;
@@ -37,6 +41,9 @@ class _Dashboard {
   final PeriodStats todayStats;
   final PeriodStats monthStats;
   final List<CancelledSale> cancelledToday;
+
+  /// Clients à relancer maintenant (délai et heure réglés dans Relances).
+  final int reminders;
 }
 
 class HomeScreen extends StatefulWidget {
@@ -71,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await repo.statsSince(today),
       await repo.statsSince(DateTime(now.year, now.month)),
       await repo.cancelledSales(from: today),
+      (await repo.remindersDue()).length,
     );
   }
 
@@ -202,6 +210,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+            if (d.reminders > 0) ...[
+              const SizedBox(height: 16),
+              Material(
+                color: Palette.amberSoft,
+                borderRadius: BorderRadius.circular(16),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  leading: Icon(
+                    Icons.notifications_active_outlined,
+                    color: Palette.amber,
+                  ),
+                  title: Text(
+                    '${d.reminders} client${d.reminders > 1 ? 's' : ''} à relancer',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Palette.amber,
+                    ),
+                  ),
+                  trailing: Icon(Icons.chevron_right, color: Palette.amber),
+                  onTap: () => _open(const RemindersScreen()),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             // L'action la plus fréquente, en très grand pour tout le monde.
             FilledButton.icon(
@@ -255,6 +288,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: const Text('Rendez-vous, notes, listes'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _open(const AgendaScreen()),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Material(
+              color: Palette.card,
+              borderRadius: BorderRadius.circular(16),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                leading: Icon(Icons.contacts_outlined, color: Palette.blue),
+                title: const Text(
+                  'Clients et fournisseurs',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text('Carnet d’adresses, comptes, relances'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(const ContactsScreen()),
               ),
             ),
             const SizedBox(height: 18),

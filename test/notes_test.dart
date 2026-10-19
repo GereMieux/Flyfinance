@@ -13,6 +13,8 @@ import 'package:flyfinance/ui/agenda/agenda_screen.dart';
 import 'package:flyfinance/ui/theme.dart';
 import 'package:provider/provider.dart';
 
+import 'old_schema.dart';
+
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
@@ -94,6 +96,7 @@ void main() {
     await Repository(
       old,
     ).addAppointment(title: 'Ancien rendez-vous', at: DateTime(2026, 10, 20));
+    await downgradeToV3(old);
     await old.customStatement('DROP TABLE note_items');
     await old.customStatement('DROP TABLE notes');
     await old.customStatement('PRAGMA user_version = 2');
