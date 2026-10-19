@@ -135,14 +135,14 @@ class _SearchScreenState extends State<SearchScreen> {
                           .where(
                             (s) =>
                                 q.isNotEmpty &&
-                                hit(s.contact?.name ?? 'comptoir'),
+                                hit(s.contact?.name ?? 'client de passage'),
                           )
                           .take(20)) {
                     tiles.add(
                       _tile(
                         'Vente',
                         Palette.blue,
-                        'Vente · ${s.contact?.name ?? 'comptoir'}',
+                        'Vente · ${s.contact?.name ?? 'client de passage'}',
                         '${shortDate(s.sale.createdAt)} · ${app.money(s.sale.total)} · ${s.status.label}',
                         () => _open(const SalesListScreen()),
                       ),
