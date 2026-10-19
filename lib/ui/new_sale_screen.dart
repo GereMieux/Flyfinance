@@ -13,6 +13,15 @@ class _SaleData {
   final List<Contact> clients;
 }
 
+/// Choix proposé par la barre client : un client existant, ou un nom tapé
+/// qui deviendra un nouveau client à l'enregistrement de la vente.
+class _ClientOption {
+  const _ClientOption.existing(Contact this.contact) : newName = null;
+  const _ClientOption.create(String this.newName) : contact = null;
+  final Contact? contact;
+  final String? newName;
+}
+
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
   @override
@@ -21,16 +30,65 @@ class NewSaleScreen extends StatefulWidget {
 
 class _NewSaleScreenState extends State<NewSaleScreen> {
   final _qty = <int, int>{};
+
+  /// Ordre d'ajout au panier, pour afficher le dernier article en haut.
+  final _order = <int>[];
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
+  final _clientText = TextEditingController();
+  final _clientFocus = FocusNode();
   bool _wholesale = false;
+
+  /// Client de passage (aucun nom) ou client nommé.
+  bool _walkIn = true;
   int? _clientId;
+  String? _clientName;
   String? _newClient;
+  String? _newPhone;
   String _payMode = 'tout';
   int _customPaid = 0;
   String _method = 'especes';
   bool _saving = false;
 
+  @override
+  void dispose() {
+    _search.dispose();
+    _searchFocus.dispose();
+    _clientText.dispose();
+    _clientFocus.dispose();
+    super.dispose();
+  }
+
   int _price(Product p) => _wholesale ? (p.wholesalePrice ?? p.price) : p.price;
+
+  void _setQty(ProductStock s, int n) {
+    final id = s.product.id;
+    if (n > s.qty) {
+      toast(context, 'Il ne reste que ${s.qty} ${s.product.name}.');
+      n = s.qty;
+    }
+    setState(() {
+      if (n <= 0) {
+        _qty.remove(id);
+        _order.remove(id);
+      } else {
+        _qty[id] = n;
+        if (!_order.contains(id)) _order.insert(0, id);
+      }
+    });
+  }
+
+  /// Article choisi dans la barre de recherche : on en ajoute un au panier
+  /// et la barre se vide pour taper l'article suivant.
+  void _pick(ProductStock s) {
+    if (s.qty <= 0) {
+      toast(context, '${s.product.name} est en rupture de stock.');
+    } else {
+      _setQty(s, (_qty[s.product.id] ?? 0) + 1);
+    }
+    _search.clear();
+    _searchFocus.requestFocus();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +97,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       load: (r) async =>
           _SaleData(await r.stock(), await r.contacts(kind: 'client')),
       builder: (context, d) {
-        final q = normalize(_search.text);
-        final items = d.stock
-            .where((s) => normalize(s.product.name).contains(q))
+        final byId = {for (final s in d.stock) s.product.id: s};
+        final cart = [
+          for (final id in _order)
+            if (byId[id] != null) byId[id]!,
+        ];
+        final others = d.stock
+            .where((s) => !_qty.containsKey(s.product.id))
             .toList();
-        final total = d.stock.fold<int>(
+        final total = cart.fold<int>(
           0,
-          (a, s) => a + (_qty[s.product.id] ?? 0) * _price(s.product),
+          (a, s) => a + _qty[s.product.id]! * _price(s.product),
         );
         final paid = switch (_payMode) {
           'tout' => total,
@@ -71,93 +133,29 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: TextField(
-                  controller: _search,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Chercher un article',
-                  ),
-                ),
+                child: _clientBar(d),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: _productBar(d),
               ),
               Expanded(
-                child: items.isEmpty
+                child: d.stock.isEmpty
                     ? const EmptyState(
                         'Aucun article. Ajoutez vos articles dans le Stock.',
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: items.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) {
-                          final s = items[i];
-                          final n = _qty[s.product.id] ?? 0;
-                          return Panel(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        s.product.name,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${fcfa(_price(s.product))} · ${s.qty} en stock',
-                                        style: TextStyle(
-                                          color: s.low
-                                              ? Palette.red
-                                              : Palette.muted,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton.outlined(
-                                  tooltip: 'Retirer un',
-                                  onPressed: n == 0
-                                      ? null
-                                      : () => setState(
-                                          () => _qty[s.product.id] = n - 1,
-                                        ),
-                                  icon: const Icon(Icons.remove),
-                                ),
-                                SizedBox(
-                                  width: 32,
-                                  child: Text(
-                                    '$n',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                IconButton.filled(
-                                  tooltip: 'Ajouter un',
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Palette.green,
-                                  ),
-                                  onPressed: n >= s.qty
-                                      ? null
-                                      : () => setState(
-                                          () => _qty[s.product.id] = n + 1,
-                                        ),
-                                  icon: const Icon(
-                                    Icons.add,
-                                    color: Palette.text,
-                                  ),
-                                ),
-                              ],
+                    : ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        children: [
+                          if (cart.isNotEmpty) ...[
+                            _header(
+                              'Panier · ${cart.length} article${cart.length > 1 ? 's' : ''}',
                             ),
-                          );
-                        },
+                            for (final s in cart) _tile(s, inCart: true),
+                            if (others.isNotEmpty) _header('Autres articles'),
+                          ],
+                          for (final s in others) _tile(s),
+                        ],
                       ),
               ),
               if (total > 0) _checkout(app, d, total, paid),
@@ -168,9 +166,363 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
+  Widget _header(String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+    child: Text(
+      text,
+      style: const TextStyle(color: Palette.muted, fontWeight: FontWeight.w700),
+    ),
+  );
+
+  // ---------- Barre client ----------
+
+  Widget _clientBar(_SaleData d) {
+    final segments = SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<bool>(
+        showSelectedIcon: false,
+        style: SegmentedButton.styleFrom(
+          selectedBackgroundColor: Palette.amber,
+          selectedForegroundColor: Palette.ink,
+          side: const BorderSide(color: Palette.line),
+        ),
+        segments: const [
+          ButtonSegment(value: true, label: Text('De passage')),
+          ButtonSegment(value: false, label: Text('Client connu')),
+        ],
+        selected: {_walkIn},
+        onSelectionChanged: (s) {
+          setState(() => _walkIn = s.first);
+          if (!_walkIn && _clientName == null) _clientFocus.requestFocus();
+        },
+      ),
+    );
+    if (_walkIn) return segments;
+    final chosen = _clientName ?? _newClient;
+    return Column(
+      children: [
+        segments,
+        const SizedBox(height: 8),
+        if (chosen != null)
+          Material(
+            color: Palette.cardHigh,
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              leading: const Icon(Icons.person, color: Palette.mint),
+              title: Text(
+                chosen,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: _newClient != null
+                  ? Text(
+                      _newPhone == null
+                          ? 'Nouveau client'
+                          : 'Nouveau client · $_newPhone',
+                      style: const TextStyle(color: Palette.amber),
+                    )
+                  : null,
+              trailing: IconButton(
+                tooltip: 'Changer de client',
+                onPressed: () {
+                  setState(() {
+                    _clientId = null;
+                    _clientName = null;
+                    _newClient = null;
+                    _newPhone = null;
+                  });
+                  _clientText.clear();
+                  _clientFocus.requestFocus();
+                },
+                icon: const Icon(Icons.close),
+              ),
+            ),
+          )
+        else
+          RawAutocomplete<_ClientOption>(
+            textEditingController: _clientText,
+            focusNode: _clientFocus,
+            optionsBuilder: (v) {
+              final q = normalize(v.text);
+              if (q.isEmpty) {
+                return [for (final c in d.clients) _ClientOption.existing(c)];
+              }
+              final found = d.clients
+                  .where((c) => normalize(c.name).contains(q))
+                  .toList();
+              return [
+                for (final c in found) _ClientOption.existing(c),
+                if (!found.any((c) => normalize(c.name) == q))
+                  _ClientOption.create(v.text.trim()),
+              ];
+            },
+            displayStringForOption: (o) => o.contact?.name ?? o.newName!,
+            onSelected: _chooseClient,
+            fieldViewBuilder: (context, controller, focus, submit) => TextField(
+              controller: controller,
+              focusNode: focus,
+              textCapitalization: TextCapitalization.words,
+              onSubmitted: (_) => submit(),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.person_search_outlined),
+                hintText: 'Nom du client',
+              ),
+            ),
+            optionsViewBuilder: (context, select, options) => _optionsView(
+              options,
+              select,
+              (o) => o.contact != null
+                  ? ListTile(
+                      leading: const Icon(Icons.person_outline),
+                      title: Text(o.contact!.name),
+                      subtitle: o.contact!.phone == null
+                          ? null
+                          : Text(
+                              o.contact!.phone!,
+                              style: const TextStyle(color: Palette.muted),
+                            ),
+                    )
+                  : ListTile(
+                      leading: const Icon(
+                        Icons.person_add_alt_1,
+                        color: Palette.amber,
+                      ),
+                      title: Text('Nouveau client : « ${o.newName} »'),
+                    ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _chooseClient(_ClientOption o) async {
+    if (o.contact != null) {
+      setState(() {
+        _clientId = o.contact!.id;
+        _clientName = o.contact!.name;
+      });
+      return;
+    }
+    final phone = await _askPhone(o.newName!);
+    if (phone == null) {
+      _clientText.clear();
+      return;
+    }
+    setState(() {
+      _newClient = o.newName;
+      _newPhone = phone.trim().isEmpty ? null : phone.trim();
+    });
+  }
+
+  /// Confirme l'ajout d'un nouveau client ; le téléphone est facultatif.
+  /// Renvoie null si l'utilisateur annule.
+  Future<String?> _askPhone(String name) {
+    final c = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Palette.card,
+        title: Text('Ajouter $name'),
+        content: TextField(
+          controller: c,
+          autofocus: true,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Téléphone (facultatif)',
+            prefixIcon: Icon(Icons.phone_outlined),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, c.text),
+            child: const Text('Ajouter'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------- Barre article ----------
+
+  Widget _productBar(_SaleData d) => RawAutocomplete<ProductStock>(
+    textEditingController: _search,
+    focusNode: _searchFocus,
+    optionsBuilder: (v) {
+      final q = normalize(v.text);
+      if (q.isEmpty) return const [];
+      final found = d.stock
+          .where((s) => normalize(s.product.name).contains(q))
+          .toList();
+      // Les noms qui commencent par le texte tapé passent devant.
+      found.sort((a, b) {
+        final pa = normalize(a.product.name).startsWith(q) ? 0 : 1;
+        final pb = normalize(b.product.name).startsWith(q) ? 0 : 1;
+        return pa != pb ? pa - pb : a.product.name.compareTo(b.product.name);
+      });
+      return found.take(8);
+    },
+    displayStringForOption: (s) => s.product.name,
+    onSelected: _pick,
+    fieldViewBuilder: (context, controller, focus, submit) => TextField(
+      controller: controller,
+      focusNode: focus,
+      onSubmitted: (_) => submit(),
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.search),
+        hintText: 'Taper le nom de l’article',
+      ),
+    ),
+    optionsViewBuilder: (context, select, options) => _optionsView(
+      options,
+      select,
+      (s) => ListTile(
+        enabled: s.qty > 0,
+        title: Text(
+          s.product.name,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          s.qty > 0 ? '${s.qty} en stock' : 'Rupture de stock',
+          style: TextStyle(color: s.low ? Palette.red : Palette.muted),
+        ),
+        trailing: Text(
+          fcfa(_price(s.product)),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+    ),
+  );
+
+  Widget _optionsView<T extends Object>(
+    Iterable<T> options,
+    void Function(T) select,
+    Widget Function(T) row,
+  ) => Align(
+    alignment: Alignment.topLeft,
+    child: Material(
+      color: Palette.cardHigh,
+      elevation: 6,
+      borderRadius: BorderRadius.circular(16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: 320,
+          maxWidth: MediaQuery.sizeOf(context).width - 32,
+        ),
+        child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          shrinkWrap: true,
+          children: [
+            for (final o in options)
+              InkWell(onTap: () => select(o), child: row(o)),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  // ---------- Liste des articles ----------
+
+  Widget _tile(ProductStock s, {bool inCart = false}) {
+    final n = _qty[s.product.id] ?? 0;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Panel(
+        color: inCart ? Palette.cardHigh : null,
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            Expanded(
+              // Toucher l'article en ajoute un, comme le bouton +.
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: n >= s.qty ? null : () => _setQty(s, n + 1),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.product.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      inCart
+                          ? '${fcfa(_price(s.product))} × $n = ${fcfa(_price(s.product) * n)}'
+                          : '${fcfa(_price(s.product))} · ${s.qty} en stock',
+                      style: TextStyle(
+                        color: inCart
+                            ? Palette.mint
+                            : (s.low ? Palette.red : Palette.muted),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Les boutons − et la quantité n'apparaissent que pour les
+            // articles déjà dans le panier : moins de boutons à l'écran.
+            if (n > 0) ...[
+              IconButton.outlined(
+                tooltip: 'Retirer un',
+                iconSize: 26,
+                onPressed: () => _setQty(s, n - 1),
+                icon: const Icon(Icons.remove),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: s.qty == 0
+                    ? null
+                    : () async {
+                        final v = await askNumber(
+                          context,
+                          title: 'Quantité de ${s.product.name}',
+                          hint: 'Maximum ${s.qty}',
+                          initial: n == 0 ? null : n,
+                        );
+                        if (v != null) _setQty(s, v);
+                      },
+                child: SizedBox(
+                  width: 44,
+                  height: 48,
+                  child: Center(
+                    child: Text(
+                      '$n',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            IconButton.filled(
+              tooltip: 'Ajouter un',
+              iconSize: 28,
+              style: IconButton.styleFrom(backgroundColor: Palette.green),
+              onPressed: n >= s.qty ? null : () => _setQty(s, n + 1),
+              icon: const Icon(Icons.add, color: Palette.text),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------- Paiement ----------
+
+  bool get _hasClient => !_walkIn && (_clientId != null || _newClient != null);
+
   Widget _checkout(AppState app, _SaleData d, int total, int paid) {
     final credit = paid < total;
-    final needsClient = credit && _clientId == null && _newClient == null;
+    final needsClient = credit && !_hasClient;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: const BoxDecoration(
@@ -184,11 +536,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           children: [
             Row(
               children: [
-                const Text(
-                  'Total',
-                  style: TextStyle(color: Palette.muted, fontSize: 16),
+                Expanded(
+                  child: Text(
+                    _hasClient
+                        ? 'Total · ${_clientName ?? _newClient}'
+                        : 'Total · client de passage',
+                    style: const TextStyle(color: Palette.muted, fontSize: 16),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Text(
                   fcfa(total),
                   style: const TextStyle(
@@ -197,46 +554,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<int?>(
-              initialValue: _clientId,
-              isExpanded: true,
-              dropdownColor: Palette.cardHigh,
-              decoration: InputDecoration(
-                labelText: _newClient == null
-                    ? 'Client'
-                    : 'Nouveau client : $_newClient',
-                prefixIcon: const Icon(Icons.person_outline),
-              ),
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Client comptoir'),
-                ),
-                for (final c in d.clients)
-                  DropdownMenuItem(value: c.id, child: Text(c.name)),
-                const DropdownMenuItem(
-                  value: -1,
-                  child: Text('+ Nouveau client'),
-                ),
-              ],
-              onChanged: (v) async {
-                if (v == -1) {
-                  final name = await _askName();
-                  setState(() {
-                    _clientId = null;
-                    _newClient = (name == null || name.trim().isEmpty)
-                        ? null
-                        : name.trim();
-                  });
-                } else {
-                  setState(() {
-                    _clientId = v;
-                    _newClient = null;
-                  });
-                }
-              },
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -291,7 +608,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   needsClient
-                      ? 'Choisissez le client pour une vente à crédit.'
+                      ? 'Pour une vente à crédit, choisissez « Client connu » et son nom en haut.'
                       : 'Reste à payer : ${fcfa(total - paid)}',
                   style: TextStyle(
                     color: needsClient ? Palette.red : Palette.amber,
@@ -302,11 +619,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(62),
+                  textStyle: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 onPressed: needsClient || _saving
                     ? null
                     : () => _save(app, d, paid),
-                child: Text(_saving ? 'Enregistrement…' : 'Valider la vente'),
+                icon: const Icon(Icons.check_circle_outline, size: 26),
+                label: Text(_saving ? 'Enregistrement…' : 'Valider la vente'),
               ),
             ),
           ],
@@ -315,34 +640,22 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
-  Future<String?> _askName() {
-    final c = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Palette.card,
-        title: const Text('Nom du client'),
-        content: TextField(controller: c, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, c.text),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _save(AppState app, _SaleData d, int paid) async {
     setState(() => _saving = true);
     try {
-      final contactId =
-          _clientId ??
-          (_newClient == null ? null : await app.repo.addContact(_newClient!));
+      int? contactId;
+      if (_hasClient) {
+        if (_clientId == null) {
+          // Le client est créé une seule fois, même si la vente échoue
+          // et qu'on la valide à nouveau.
+          final id = await app.repo.addContact(_newClient!, phone: _newPhone);
+          _clientId = id;
+          _clientName = _newClient;
+          _newClient = null;
+          _newPhone = null;
+        }
+        contactId = _clientId;
+      }
       await app.repo.recordSale(
         lines: [
           for (final s in d.stock)

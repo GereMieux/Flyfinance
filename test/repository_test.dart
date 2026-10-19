@@ -92,4 +92,45 @@ void main() {
     expect((await repo.findProducts('creme')).single.name, 'Crème fraîche');
     expect((await repo.findContacts('KONE')).single.id, fatou);
   });
+
+  test('détail du jour et bénéfices bornés à la journée', () async {
+    var t = DateTime(2026, 10, 18, 17);
+    repo.now = () => t;
+    await repo.recordSale(lines: [CartLine(riz, 1)], paidNow: 15000);
+    t = DateTime(2026, 10, 19, 9);
+    await repo.recordSale(
+      lines: [CartLine(riz, 2, unitPrice: 14000)],
+      contactId: fatou,
+      paidNow: 10000,
+    );
+    final cancelled = await repo.recordSale(
+      lines: [CartLine(riz, 1)],
+      paidNow: 15000,
+    );
+    await repo.cancelSale(cancelled);
+
+    final day = await repo.dayDetails(DateTime(2026, 10, 19, 23));
+    expect(day, hasLength(2));
+    final credit = day.firstWhere((d) => d.summary.contact != null);
+    expect(credit.lines.single.qty, 2);
+    expect(credit.lines.single.product.name, 'Riz 25 kg');
+    expect(credit.margin, 2 * 2000);
+    expect(day.firstWhere((d) => d.summary.sale.cancelled).margin, 0);
+
+    final today = await repo.statsSince(
+      DateTime(2026, 10, 19),
+      to: DateTime(2026, 10, 20),
+    );
+    expect(today.sales, 28000);
+    expect(today.profit, 4000);
+    expect(today.cashIn, 25000);
+    expect(today.count, 1);
+
+    final yesterday = await repo.statsSince(
+      DateTime(2026, 10, 18),
+      to: DateTime(2026, 10, 19),
+    );
+    expect(yesterday.sales, 15000);
+    expect(yesterday.profit, 3000);
+  });
 }
