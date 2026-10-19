@@ -156,33 +156,7 @@ class _ShopItemFormState extends State<ShopItemForm> {
                     [for (final c in cats) c.name],
                     () => setState(() {}),
                   ),
-                  _label('Marque'),
-                  _Suggest(_brand, 'Ex. : Nike, Uniwax (facultatif)', [
-                    for (final b in brands) b.name,
-                  ], () => setState(() {})),
-                  _label('Tailles proposées'),
-                  TextField(
-                    controller: _sizes,
-                    decoration: const InputDecoration(
-                      hintText: 'Ex. : S, M, L, XL ou 40, 41, 42',
-                    ),
-                  ),
-                  _label('Couleurs proposées'),
-                  TextField(
-                    controller: _colors,
-                    decoration: const InputDecoration(
-                      hintText: 'Ex. : Noir, Blanc, Rouge',
-                    ),
-                  ),
-                  _label('Description'),
-                  TextField(
-                    controller: _description,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      hintText: 'Matière, contenance, conseils…',
-                    ),
-                  ),
-                  _label('Prix en ligne (laisser vide = prix boutique)'),
+                  _label('Prix en ligne (vide = même prix qu’en boutique)'),
                   TextField(
                     controller: _price,
                     keyboardType: TextInputType.number,
@@ -193,6 +167,46 @@ class _ShopItemFormState extends State<ShopItemForm> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Plus de détails : marque, tailles, couleurs',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    initiallyExpanded:
+                        (widget.item?.item.sizes ?? '').isNotEmpty ||
+                        (widget.item?.item.colors ?? '').isNotEmpty,
+                    expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('Marque'),
+                      _Suggest(_brand, 'Ex. : Nike, Uniwax (facultatif)', [
+                        for (final b in brands) b.name,
+                      ], () => setState(() {})),
+                      _label('Tailles proposées'),
+                      TextField(
+                        controller: _sizes,
+                        decoration: const InputDecoration(
+                          hintText: 'Ex. : S, M, L, XL ou 40, 41, 42',
+                        ),
+                      ),
+                      _label('Couleurs proposées'),
+                      TextField(
+                        controller: _colors,
+                        decoration: const InputDecoration(
+                          hintText: 'Ex. : Noir, Blanc, Rouge',
+                        ),
+                      ),
+                      _label('Description'),
+                      TextField(
+                        controller: _description,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'Matière, contenance, conseils…',
+                        ),
+                      ),
+                    ],
+                  ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Visible par les clients'),
@@ -368,11 +382,29 @@ class _PromotionFormState extends State<PromotionForm> {
                     ],
                   ),
                 ),
+              if (!_fixedPrice)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final n in [10, 20, 30, 50])
+                        ChoiceChip(
+                          label: Text('−$n %'),
+                          selected: _value.text == '$n',
+                          onSelected: (_) => setState(() => _value.text = '$n'),
+                        ),
+                    ],
+                  ),
+                ),
               TextField(
                 controller: _value,
+                onChanged: (_) => setState(() {}),
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  hintText: _fixedPrice ? 'Nouveau prix en FCFA' : 'Ex. : 20',
+                  hintText: _fixedPrice
+                      ? 'Nouveau prix en FCFA'
+                      : 'Autre pourcentage',
                   suffixText: _fixedPrice ? 'FCFA' : '%',
                 ),
               ),
@@ -428,13 +460,21 @@ class _PromotionFormState extends State<PromotionForm> {
                 'La promo commence à minuit le jour du début et s’arrête à minuit le jour de fin.',
                 style: TextStyle(color: Palette.muted, fontSize: 13),
               ),
-              _label('Détails pour les clients'),
-              TextField(
-                controller: _details,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  hintText: 'Ex. : dans la limite des stocks',
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text(
+                  'Ajouter un message pour les clients',
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
+                children: [
+                  TextField(
+                    controller: _details,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      hintText: 'Ex. : dans la limite des stocks',
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               FilledButton(
@@ -635,12 +675,20 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                   suffixText: 'FCFA',
                 ),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _note,
-                decoration: const InputDecoration(
-                  hintText: 'Note (heure de livraison…)',
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text(
+                  'Ajouter une note',
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
+                children: [
+                  TextField(
+                    controller: _note,
+                    decoration: const InputDecoration(
+                      hintText: 'Heure de livraison, consignes…',
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Panel(

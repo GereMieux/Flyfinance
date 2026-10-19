@@ -53,10 +53,10 @@ class OnlineShopScreen extends StatelessWidget {
             unselectedLabelColor: Palette.muted,
             labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             tabs: [
-              Tab(text: 'Commandes'),
-              Tab(text: 'Catalogue'),
-              Tab(text: 'Promos'),
-              Tab(text: 'Annonces'),
+              Tab(icon: Icon(Icons.local_shipping_outlined), text: 'Commandes'),
+              Tab(icon: Icon(Icons.shopping_bag_outlined), text: 'Catalogue'),
+              Tab(icon: Icon(Icons.local_offer_outlined), text: 'Promos'),
+              Tab(icon: Icon(Icons.campaign_outlined), text: 'Annonces'),
             ],
           ),
         ),
@@ -126,8 +126,9 @@ class _Tag extends StatelessWidget {
 Widget _addButton(String label, VoidCallback onTap) => Padding(
   padding: const EdgeInsets.only(bottom: 12),
   child: FilledButton.icon(
+    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(60)),
     onPressed: onTap,
-    icon: const Icon(Icons.add),
+    icon: const Icon(Icons.add, size: 26),
     label: Text(label),
   ),
 );
@@ -135,9 +136,10 @@ Widget _addButton(String label, VoidCallback onTap) => Padding(
 // ---------------------------------------------------------------- Commandes
 
 class _OrdersData {
-  _OrdersData(this.orders, this.stats);
+  _OrdersData(this.orders, this.stats, this.info);
   final List<OrderDetail> orders;
   final ShopStats stats;
+  final ShopInfo info;
 }
 
 class _OrdersTab extends StatefulWidget {
@@ -154,7 +156,11 @@ class _OrdersTabState extends State<_OrdersTab> {
     final app = context.watch<AppState>();
     final shop = context.read<ShopRepository>();
     return Loader<_OrdersData>(
-      load: (_) async => _OrdersData(await shop.orders(), await shop.stats()),
+      load: (_) async => _OrdersData(
+        await shop.orders(),
+        await shop.stats(),
+        await shop.info(),
+      ),
       builder: (context, d) {
         final list = _onlyOpen
             ? d.orders.where((o) => o.status.open).toList()
@@ -180,6 +186,40 @@ class _OrdersTabState extends State<_OrdersTab> {
               ],
             ),
             const SizedBox(height: 14),
+            if (d.info.orangeNumber.isEmpty && d.info.waveNumber.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Material(
+                  color: const Color(0xFF3A2F1B),
+                  borderRadius: BorderRadius.circular(16),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    leading: const Icon(
+                      Icons.phone_android,
+                      color: Palette.amber,
+                    ),
+                    title: const Text(
+                      'Ajoutez vos numéros Orange Money et Wave',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Palette.amber,
+                      ),
+                    ),
+                    subtitle: const Text('Pour être payé à distance.'),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: Palette.amber,
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ShopSettingsScreen(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             _addButton(
               'Nouvelle commande',
               () => Navigator.of(
@@ -400,8 +440,7 @@ class OrderScreen extends StatelessWidget {
     final o = d.order;
     final next = switch (d.status) {
       OrderStatus.nouvelle => (OrderStatus.confirmee, 'Confirmer la commande'),
-      OrderStatus.confirmee => (OrderStatus.livraison, 'Partie en livraison'),
-      _ => (OrderStatus.livree, 'Marquer livrée'),
+      _ => (OrderStatus.livree, 'Livrée au client'),
     };
     return [
       if (o.payMethod != 'livraison' && !o.paid) ...[
