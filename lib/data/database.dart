@@ -1,8 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'accounts_tables.dart';
 import 'services_tables.dart';
 
+export 'accounts_tables.dart';
 export 'services_tables.dart';
 
 part 'database.g.dart';
@@ -26,6 +28,7 @@ class Contacts extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1, max: 120)();
   TextColumn get phone => text().nullable()();
+  TextColumn get address => text().nullable()();
 
   /// 'client' ou 'fournisseur'.
   TextColumn get kind => text().withDefault(const Constant('client'))();
@@ -68,9 +71,13 @@ class StockMoves extends Table {
   IntColumn get productId => integer().references(Products, #id)();
   IntColumn get delta => integer()();
 
-  /// 'achat', 'vente', 'perte', 'inventaire' ou 'annulation'.
+  /// 'achat', 'vente', 'perte', 'inventaire', 'annulation' ou
+  /// 'annulation_achat'.
   TextColumn get reason => text()();
   IntColumn get saleId => integer().nullable().references(Sales, #id)();
+
+  /// Entrée liée à un achat chez un fournisseur.
+  IntColumn get purchaseId => integer().nullable().references(Purchases, #id)();
   DateTimeColumn get createdAt => dateTime()();
 }
 
@@ -88,6 +95,9 @@ class StockMoves extends Table {
     ServicePayments,
     Appointments,
     Settings,
+    Purchases,
+    PurchaseLines,
+    AccountEntries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -112,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -125,6 +135,14 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(servicePayments);
         await m.createTable(appointments);
         await m.createTable(settings);
+      }
+      if (from < 3) {
+        // Comptes fournisseurs et clients, carnet d'adresses.
+        await m.addColumn(contacts, contacts.address);
+        await m.createTable(purchases);
+        await m.createTable(purchaseLines);
+        await m.createTable(accountEntries);
+        await m.addColumn(stockMoves, stockMoves.purchaseId);
       }
     },
     beforeOpen: (details) async {
