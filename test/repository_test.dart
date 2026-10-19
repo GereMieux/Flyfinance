@@ -133,4 +133,27 @@ void main() {
     expect(yesterday.sales, 15000);
     expect(yesterday.profit, 3000);
   });
+
+  test('les ventes annulées restent visibles avec leur heure', () async {
+    var t = DateTime(2026, 10, 18, 9);
+    repo.now = () => t;
+    final old = await repo.recordSale(
+      lines: [CartLine(riz, 1)],
+      paidNow: 15000,
+    );
+    await repo.cancelSale(old);
+    t = DateTime(2026, 10, 19, 10);
+    final id = await repo.recordSale(lines: [CartLine(riz, 2)], paidNow: 30000);
+    await repo.recordSale(lines: [CartLine(riz, 1)], paidNow: 15000);
+    t = DateTime(2026, 10, 19, 11, 30);
+    await repo.cancelSale(id);
+
+    final all = await repo.cancelledSales();
+    expect(all.map((c) => c.detail.summary.sale.id), [id, old]);
+    expect(all.first.cancelledAt, DateTime(2026, 10, 19, 11, 30));
+    expect(all.first.detail.lines.single.qty, 2);
+
+    final today = await repo.cancelledSales(from: DateTime(2026, 10, 19));
+    expect(today.single.detail.summary.sale.id, id);
+  });
 }

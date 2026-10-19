@@ -168,7 +168,7 @@ class _DaySalesScreenState extends State<DaySalesScreen> {
               const _Title('Toutes les ventes'),
               if (d.details.isEmpty)
                 const EmptyState('Aucune vente ce jour-là.'),
-              for (final s in d.details) _SaleCard(s),
+              for (final s in d.details) SaleCard(s),
             ],
           );
         },
@@ -207,9 +207,12 @@ class _Title extends StatelessWidget {
   );
 }
 
-class _SaleCard extends StatelessWidget {
-  const _SaleCard(this.d);
+/// Une vente dépliable avec ses articles. `note` remplace l'heure de vente
+/// sous le nom du client (ex. l'heure d'annulation dans la corbeille).
+class SaleCard extends StatelessWidget {
+  const SaleCard(this.d, {super.key, this.note});
   final SaleDetail d;
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +236,7 @@ class _SaleCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(
-            '$time · ${d.lines.length} article${d.lines.length > 1 ? 's' : ''}',
+            '${note ?? time} · ${d.lines.length} article${d.lines.length > 1 ? 's' : ''}',
             style: const TextStyle(color: Palette.muted),
           ),
           trailing: Column(
