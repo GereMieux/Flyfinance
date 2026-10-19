@@ -1,8 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'notes_tables.dart';
 import 'services_tables.dart';
 
+export 'notes_tables.dart';
 export 'services_tables.dart';
 
 part 'database.g.dart';
@@ -88,6 +90,8 @@ class StockMoves extends Table {
     ServicePayments,
     Appointments,
     Settings,
+    Notes,
+    NoteItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -112,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -125,6 +129,11 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(servicePayments);
         await m.createTable(appointments);
         await m.createTable(settings);
+      }
+      if (from < 3) {
+        // Bloc-notes et listes.
+        await m.createTable(notes);
+        await m.createTable(noteItems);
       }
     },
     beforeOpen: (details) async {

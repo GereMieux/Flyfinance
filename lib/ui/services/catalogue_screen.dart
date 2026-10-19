@@ -100,7 +100,7 @@ class CatalogueScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Mes prestations')),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Palette.green,
-        foregroundColor: Palette.text,
+        foregroundColor: Colors.white,
         onPressed: () => _edit(context),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter'),

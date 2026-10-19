@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../data/repository.dart';
+import 'agenda/agenda_screen.dart';
 import 'credits_screen.dart';
 import 'day_sales_screen.dart';
 import 'new_sale_screen.dart';
@@ -236,6 +237,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: const Text('Devis, factures, rendez-vous'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _open(const ServicesScreen()),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Material(
+              color: Palette.card,
+              borderRadius: BorderRadius.circular(16),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                leading: Icon(Icons.event_note_outlined, color: Palette.amber),
+                title: const Text(
+                  'Agenda et notes',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text('Rendez-vous, notes, listes'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(const AgendaScreen()),
               ),
             ),
             const SizedBox(height: 18),

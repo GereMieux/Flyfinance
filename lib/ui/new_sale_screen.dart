@@ -509,7 +509,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               iconSize: 28,
               style: IconButton.styleFrom(backgroundColor: Palette.green),
               onPressed: n >= s.qty ? null : () => _setQty(s, n + 1),
-              icon: Icon(Icons.add, color: Palette.text),
+              icon: const Icon(Icons.add, color: Colors.white),
             ),
           ],
         ),
