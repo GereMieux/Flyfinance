@@ -52,15 +52,15 @@ class _TrashScreenState extends State<TrashScreen> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
               Panel(
-                color: const Color(0xFF3A1F1B),
+                color: Palette.redSoft,
                 child: Row(
                   children: [
-                    const Icon(Icons.delete_outline, color: Palette.red),
+                    Icon(Icons.delete_outline, color: Palette.red),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         "Aujourd'hui : ${todays.length} vente${todays.length > 1 ? 's' : ''} annulée${todays.length > 1 ? 's' : ''}",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Palette.red,
                         ),
@@ -68,7 +68,7 @@ class _TrashScreenState extends State<TrashScreen> {
                     ),
                     Text(
                       app.money(total),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: Palette.red,
                       ),
@@ -83,7 +83,7 @@ class _TrashScreenState extends State<TrashScreen> {
                     padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
                     child: Text(
                       lastDay = _day(c.cancelledAt, today),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Palette.muted,
                         fontWeight: FontWeight.w700,
                       ),

@@ -80,7 +80,7 @@ class DocTile extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF1F3A2F),
+                  backgroundColor: Palette.mintSoft,
                   child: Icon(
                     s.isQuote
                         ? Icons.request_quote_outlined
@@ -104,10 +104,7 @@ class DocTile extends StatelessWidget {
                       ),
                       Text(
                         '${s.doc.number} · ${dayDate(s.doc.createdAt)}',
-                        style: const TextStyle(
-                          color: Palette.muted,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Palette.muted, fontSize: 13),
                       ),
                     ],
                   ),
@@ -237,12 +234,12 @@ class _ClientPickerState extends State<_ClientPicker> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.person_add_alt_1, color: Palette.mint),
+              leading: Icon(Icons.person_add_alt_1, color: Palette.mint),
               title: Text(
                 _q.text.trim().isEmpty
                     ? 'Nouveau client'
                     : 'Nouveau client « ${_q.text.trim()} »',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Palette.mint,
                   fontWeight: FontWeight.w700,
                 ),

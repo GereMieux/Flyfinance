@@ -143,6 +143,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 child: d.stock.isEmpty
                     ? const EmptyState(
                         'Aucun article. Ajoutez vos articles dans le Stock.',
+                        icon: Icons.inventory_2_outlined,
                       )
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -170,7 +171,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
     child: Text(
       text,
-      style: const TextStyle(color: Palette.muted, fontWeight: FontWeight.w700),
+      style: TextStyle(color: Palette.muted, fontWeight: FontWeight.w700),
     ),
   );
 
@@ -184,7 +185,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         style: SegmentedButton.styleFrom(
           selectedBackgroundColor: Palette.amber,
           selectedForegroundColor: Palette.ink,
-          side: const BorderSide(color: Palette.line),
+          side: BorderSide(color: Palette.line),
         ),
         segments: const [
           ButtonSegment(value: true, label: Text('De passage')),
@@ -211,7 +212,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              leading: const Icon(Icons.person, color: Palette.mint),
+              leading: Icon(Icons.person, color: Palette.mint),
               title: Text(
                 chosen,
                 style: const TextStyle(fontWeight: FontWeight.w700),
@@ -221,7 +222,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                       _newPhone == null
                           ? 'Nouveau client'
                           : 'Nouveau client · $_newPhone',
-                      style: const TextStyle(color: Palette.amber),
+                      style: TextStyle(color: Palette.amber),
                     )
                   : null,
               trailing: IconButton(
@@ -281,11 +282,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                           ? null
                           : Text(
                               o.contact!.phone!,
-                              style: const TextStyle(color: Palette.muted),
+                              style: TextStyle(color: Palette.muted),
                             ),
                     )
                   : ListTile(
-                      leading: const Icon(
+                      leading: Icon(
                         Icons.person_add_alt_1,
                         color: Palette.amber,
                       ),
@@ -508,7 +509,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               iconSize: 28,
               style: IconButton.styleFrom(backgroundColor: Palette.green),
               onPressed: n >= s.qty ? null : () => _setQty(s, n + 1),
-              icon: const Icon(Icons.add, color: Palette.text),
+              icon: Icon(Icons.add, color: Palette.text),
             ),
           ],
         ),
@@ -525,9 +526,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final needsClient = credit && !_hasClient;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Palette.card,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
         top: false,
@@ -541,7 +542,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     _hasClient
                         ? 'Total · ${_clientName ?? _newClient}'
                         : 'Total · client de passage',
-                    style: const TextStyle(color: Palette.muted, fontSize: 16),
+                    style: TextStyle(color: Palette.muted, fontSize: 16),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -623,6 +624,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(62),
                   textStyle: const TextStyle(
+                    fontFamily: appFont,
                     fontSize: 19,
                     fontWeight: FontWeight.w700,
                   ),

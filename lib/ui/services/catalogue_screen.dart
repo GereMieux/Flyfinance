@@ -65,10 +65,7 @@ class CatalogueScreen extends StatelessWidget {
                   await repo.archiveService(s.id);
                   if (ctx.mounted) Navigator.pop(ctx, true);
                 },
-                child: const Text(
-                  'Retirer',
-                  style: TextStyle(color: Palette.red),
-                ),
+                child: Text('Retirer', style: TextStyle(color: Palette.red)),
               ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),

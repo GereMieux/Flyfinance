@@ -26,7 +26,7 @@ class SaleTile extends StatelessWidget {
       ),
       subtitle: Text(
         shortDate(s.sale.createdAt),
-        style: const TextStyle(color: Palette.muted),
+        style: TextStyle(color: Palette.muted),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -150,11 +150,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 ),
                 title: Text(
                   st?.label ?? 'Toutes les ventes',
-                  style: const TextStyle(color: Palette.text, fontSize: 17),
+                  style: TextStyle(color: Palette.text, fontSize: 17),
                 ),
                 trailing: Text(
                   '${st == null ? all.length : all.where((s) => s.status == st).length}',
-                  style: const TextStyle(color: Palette.muted),
+                  style: TextStyle(color: Palette.muted),
                 ),
                 onTap: () => Navigator.pop(ctx, (st,)),
               ),
@@ -221,7 +221,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                             color: Palette.cardHigh,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.shopping_cart_checkout,
                             color: Palette.mint,
                           ),
@@ -235,7 +235,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                 _filter == null
                                     ? 'Toutes les ventes'
                                     : 'Ventes : ${_filter!.label}',
-                                style: const TextStyle(color: Palette.muted),
+                                style: TextStyle(color: Palette.muted),
                               ),
                               FittedBox(
                                 child: Text(
@@ -275,14 +275,18 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   context,
                   MaterialPageRoute(builder: (_) => const ProductStatsScreen()),
                 ),
-                icon: const Icon(Icons.bar_chart, color: Palette.amber),
+                icon: Icon(Icons.bar_chart, color: Palette.amber),
                 label: const Text('Statistiques des produits'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
                 ),
               ),
               const SizedBox(height: 12),
-              if (list.isEmpty) const EmptyState('Aucune vente ici.'),
+              if (list.isEmpty)
+                const EmptyState(
+                  'Aucune vente ici.',
+                  icon: Icons.receipt_long_outlined,
+                ),
               for (final s in list)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),

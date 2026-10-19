@@ -191,7 +191,7 @@ class _DetailView extends StatelessWidget {
                   if (s.doc.status != e.key)
                     PopupMenuItem(value: e.key, child: Text(e.value)),
                 const PopupMenuDivider(),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Text(
                     'Supprimer',
@@ -200,7 +200,7 @@ class _DetailView extends StatelessWidget {
                 ),
               ],
               if (!s.isQuote && !cancelled)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'cancel',
                   child: Text(
                     'Annuler la facture',
@@ -215,7 +215,7 @@ class _DetailView extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           Panel(
-            color: const Color(0xFF18302A),
+            color: Palette.hero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -224,7 +224,7 @@ class _DetailView extends StatelessWidget {
                     Expanded(
                       child: Text(
                         s.kind.label,
-                        style: const TextStyle(color: Palette.muted),
+                        style: TextStyle(color: Palette.muted),
                       ),
                     ),
                     StatusPill(status),
@@ -242,7 +242,7 @@ class _DetailView extends StatelessWidget {
                 if (!s.isQuote && !cancelled && s.paid > 0)
                   Text(
                     'Payé ${app.money(s.paid)} · reste ${app.money(s.due)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Palette.amber,
                       fontWeight: FontWeight.w700,
                     ),
@@ -304,7 +304,7 @@ class _DetailView extends StatelessWidget {
                               ),
                               Text(
                                 '${qtyText(l.qty)} ${l.unit} × ${app.money(l.unitPrice)}',
-                                style: const TextStyle(color: Palette.muted),
+                                style: TextStyle(color: Palette.muted),
                               ),
                             ],
                           ),
@@ -313,7 +313,7 @@ class _DetailView extends StatelessWidget {
                       ],
                     ),
                   ),
-                const Divider(color: Palette.line),
+                Divider(color: Palette.line),
                 if (t.discount > 0 || t.taxRate > 0)
                   _row('Sous-total', app.money(t.subtotal)),
                 if (t.discount > 0) _row('Remise', app.money(-t.discount)),
@@ -335,7 +335,7 @@ class _DetailView extends StatelessWidget {
           ],
           if (s.payments.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Paiements reçus',
               style: TextStyle(
                 color: Palette.muted,
@@ -349,7 +349,7 @@ class _DetailView extends StatelessWidget {
                   for (final p in s.payments)
                     ListTile(
                       dense: true,
-                      leading: const Icon(
+                      leading: Icon(
                         Icons.payments_outlined,
                         color: Palette.mint,
                       ),

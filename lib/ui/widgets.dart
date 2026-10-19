@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
@@ -49,19 +50,24 @@ class _LoaderState<T> extends State<Loader<T>> {
             padding: const EdgeInsets.all(24),
             child: Text(
               'Erreur : ${snap.error}',
-              style: const TextStyle(color: Palette.red),
+              style: TextStyle(color: Palette.red),
             ),
           );
         }
         final data = snap.data ?? _last;
-        if (data == null) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+        if (data == null) return const SkeletonList();
+        final first = _last == null;
         _last = data;
-        return widget.builder(context, data);
+        final child = widget.builder(context, data);
+        // Premier affichage : léger fondu au lieu d'une apparition sèche.
+        if (!first) return child;
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: Motion.normal,
+          curve: Motion.curve,
+          builder: (_, v, c) => Opacity(opacity: v, child: c),
+          child: child,
+        );
       },
     );
   }
@@ -76,7 +82,7 @@ class EyeButton extends StatelessWidget {
     return IconButton.outlined(
       tooltip: s.hideAmounts ? 'Afficher les montants' : 'Masquer les montants',
       onPressed: s.toggleAmounts,
-      style: IconButton.styleFrom(side: const BorderSide(color: Palette.line)),
+      style: IconButton.styleFrom(side: BorderSide(color: Palette.line)),
       icon: Icon(
         s.hideAmounts
             ? Icons.visibility_off_outlined
@@ -110,25 +116,180 @@ class Panel extends StatelessWidget {
   );
 }
 
+/// Écran vide qui explique quoi faire, avec un bouton pour le faire.
 class EmptyState extends StatelessWidget {
-  const EmptyState(this.text, {super.key, this.icon = Icons.inbox_outlined});
+  const EmptyState(
+    this.text, {
+    super.key,
+    this.icon = Icons.inbox_outlined,
+    this.actionLabel,
+    this.onAction,
+  });
   final String text;
   final IconData icon;
+  final String? actionLabel;
+  final VoidCallback? onAction;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
     child: Column(
       children: [
-        Icon(icon, size: 40, color: Palette.muted),
-        const SizedBox(height: 12),
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: Palette.cardHigh,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 34, color: Palette.muted),
+        ),
+        const SizedBox(height: 14),
         Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Palette.muted, fontSize: 15),
+          style: TextStyle(color: Palette.muted, fontSize: 15, height: 1.4),
         ),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 16),
+          FilledButton.tonal(
+            onPressed: onAction,
+            style: FilledButton.styleFrom(
+              backgroundColor: Palette.mintSoft,
+              foregroundColor: Palette.mint,
+              minimumSize: const Size(48, 46),
+            ),
+            child: Text(actionLabel!),
+          ),
+        ],
       ],
     ),
   );
+}
+
+/// Place réservée pendant le chargement : des blocs gris qui « respirent »,
+/// comme dans les applications bancaires, plutôt qu'une roue qui tourne.
+class SkeletonList extends StatefulWidget {
+  const SkeletonList({super.key, this.rows = 4});
+  final int rows;
+  @override
+  State<SkeletonList> createState() => _SkeletonListState();
+}
+
+class _SkeletonListState extends State<SkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Chargement',
+    child: FadeTransition(
+      opacity: Tween(begin: 0.45, end: 1.0).animate(_c),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            for (var i = 0; i < widget.rows; i++)
+              Container(
+                height: i == 0 ? 120 : 64,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Palette.card,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Montant qui défile jusqu'à sa nouvelle valeur au lieu de changer d'un coup.
+class AnimatedMoney extends StatelessWidget {
+  const AnimatedMoney(this.amount, {super.key, this.style});
+  final int amount;
+  final TextStyle? style;
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: amount.toDouble()),
+      duration: Motion.slow,
+      curve: Motion.curve,
+      builder: (_, v, _) => Text(
+        app.money(v.round()),
+        style: (style ?? const TextStyle()).copyWith(fontFeatures: tabular),
+        semanticsLabel: app.hideAmounts ? 'Montant masqué' : app.money(amount),
+      ),
+    );
+  }
+}
+
+/// Recouvre l'application quand elle passe en arrière-plan, pour que les
+/// montants ne se voient pas dans la liste des applications récentes.
+class PrivacyCover extends StatelessWidget {
+  const PrivacyCover({super.key});
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Palette.ground,
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lock_outline, size: 44, color: Palette.mint),
+          const SizedBox(height: 12),
+          Text(
+            'FLYFINANCE',
+            style: TextStyle(
+              fontFamily: appFont,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 2,
+              color: Palette.text,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Ajoute les points des milliers pendant la saisie : 150000 → 150.000.
+class ThousandsFormatter extends TextInputFormatter {
+  const ThousandsFormatter();
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue old, TextEditingValue v) {
+    final digits = v.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return const TextEditingValue();
+    final n = int.tryParse(digits);
+    if (n == null) return old;
+    final text = fcfa(n, unit: false);
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
+/// Lit un montant saisi avec ou sans points : « 150.000 » → 150000.
+int? parseAmount(String text) =>
+    int.tryParse(text.replaceAll(RegExp(r'[^0-9]'), ''));
+
+/// Petites vibrations, comme sur les caisses enregistreuses tactiles.
+abstract final class Haptics {
+  static void tap() => HapticFeedback.selectionClick();
+  static void success() => HapticFeedback.mediumImpact();
+  static void warning() => HapticFeedback.heavyImpact();
 }
 
 String shortDate(DateTime d) {
@@ -136,8 +297,28 @@ String shortDate(DateTime d) {
   return '${two(d.day)}/${two(d.month)}/${d.year} · ${two(d.hour)}:${two(d.minute)}';
 }
 
-void toast(BuildContext context, String text) =>
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+/// Message bref en bas de l'écran, avec une petite vibration de
+/// confirmation.
+void toast(BuildContext context, String text, {bool error = false}) {
+  error ? Haptics.warning() : Haptics.success();
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              error ? Icons.error_outline : Icons.check_circle_outline,
+              color: error ? const Color(0xFFF28B7A) : const Color(0xFF7FD3A8),
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(text)),
+          ],
+        ),
+      ),
+    );
+}
 
 /// Champ numérique simple, utilisé dans les boîtes de dialogue.
 Future<int?> askNumber(
@@ -146,16 +327,25 @@ Future<int?> askNumber(
   String? hint,
   int? initial,
 }) async {
-  final c = TextEditingController(text: initial?.toString() ?? '');
+  final c = TextEditingController(
+    text: initial == null ? '' : fcfa(initial, unit: false),
+  );
   final v = await showDialog<int>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Palette.card,
       title: Text(title),
       content: TextField(
         controller: c,
         autofocus: true,
         keyboardType: TextInputType.number,
+        inputFormatters: const [ThousandsFormatter()],
+        textInputAction: TextInputAction.done,
+        onSubmitted: (t) => Navigator.pop(ctx, parseAmount(t)),
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          fontFeatures: tabular,
+        ),
         decoration: InputDecoration(hintText: hint),
       ),
       actions: [
@@ -164,10 +354,7 @@ Future<int?> askNumber(
           child: const Text('Annuler'),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(
-            ctx,
-            int.tryParse(c.text.replaceAll(RegExp(r'[^0-9]'), '')),
-          ),
+          onPressed: () => Navigator.pop(ctx, parseAmount(c.text)),
           child: const Text('Valider'),
         ),
       ],
@@ -187,7 +374,7 @@ Widget statChip(String label, String value, Color color) => Expanded(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Palette.muted)),
+        Text(label, style: TextStyle(fontSize: 12, color: Palette.muted)),
         FittedBox(
           child: Text(
             value,
@@ -198,3 +385,95 @@ Widget statChip(String label, String value, Color color) => Expanded(
     ),
   ),
 );
+
+/// « lundi 19 octobre », pour l'en-tête de l'accueil.
+String longDate(DateTime d) {
+  const days = [
+    'lundi',
+    'mardi',
+    'mercredi',
+    'jeudi',
+    'vendredi',
+    'samedi',
+    'dimanche',
+  ];
+  const months = [
+    'janvier',
+    'février',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juillet',
+    'août',
+    'septembre',
+    'octobre',
+    'novembre',
+    'décembre',
+  ];
+  final day = days[d.weekday - 1];
+  return '${day[0].toUpperCase()}${day.substring(1)} ${d.day} ${months[d.month - 1]}';
+}
+
+/// Bouton soleil / lune : choisir le mode jour, le mode nuit, ou suivre le
+/// téléphone.
+class AppearanceButton extends StatelessWidget {
+  const AppearanceButton({super.key});
+
+  static const _choices = [
+    (Appearance.auto, Icons.brightness_auto_outlined, 'Comme le téléphone'),
+    (Appearance.jour, Icons.light_mode_outlined, 'Mode jour'),
+    (Appearance.nuit, Icons.dark_mode_outlined, 'Mode nuit'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    return IconButton(
+      tooltip: 'Mode jour ou nuit',
+      icon: Icon(
+        Palette.isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+      ),
+      onPressed: () => showModalBottomSheet<void>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  child: Text(
+                    'Affichage',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                for (final (value, icon, label) in _choices)
+                  ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    leading: Icon(icon),
+                    title: Text(
+                      label,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    trailing: app.appearance == value
+                        ? Icon(Icons.check_circle, color: Palette.mint)
+                        : null,
+                    onTap: () {
+                      Haptics.tap();
+                      app.setAppearance(value);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

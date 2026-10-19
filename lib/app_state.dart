@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'data/repository.dart';
+import 'security/lock_service.dart';
 
 /// Format FCFA comme sur les reçus ivoiriens : 13.303.850 FCFA.
 String fcfa(int amount, {bool hidden = false, bool unit = true}) {
@@ -21,11 +22,38 @@ String spokenFcfa(int amount) {
   return '$s francs';
 }
 
+/// Apparence choisie : comme le téléphone, toujours clair ou toujours sombre.
+enum Appearance { auto, jour, nuit }
+
 /// État partagé de l'application : préférences et signal de rafraîchissement
 /// après chaque enregistrement.
 class AppState extends ChangeNotifier {
-  AppState(this.repo);
+  AppState(this.repo, {this.store});
   final Repository repo;
+
+  /// Où sont gardées les préférences d'un lancement à l'autre (rien en test).
+  final SecretStore? store;
+
+  /// Relit les préférences enregistrées.
+  Future<void> loadPrefs() async {
+    final s = store;
+    if (s == null) return;
+    final a = await s.read('pref_appearance');
+    _appearance = Appearance.values.firstWhere(
+      (v) => v.name == a,
+      orElse: () => Appearance.auto,
+    );
+    _hideAmounts = await s.read('pref_hide_amounts') == '1';
+    notifyListeners();
+  }
+
+  Appearance _appearance = Appearance.auto;
+  Appearance get appearance => _appearance;
+  void setAppearance(Appearance a) {
+    _appearance = a;
+    store?.write('pref_appearance', a.name);
+    notifyListeners();
+  }
 
   /// Dernière visite de la corbeille : les annulations plus récentes
   /// s'affichent en notification sur l'accueil.
@@ -39,6 +67,7 @@ class AppState extends ChangeNotifier {
   bool get hideAmounts => _hideAmounts;
   void toggleAmounts() {
     _hideAmounts = !_hideAmounts;
+    store?.write('pref_hide_amounts', _hideAmounts ? '1' : '0');
     notifyListeners();
   }
 
