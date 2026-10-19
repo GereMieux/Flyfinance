@@ -8,6 +8,8 @@ import 'package:flyfinance/data/repository.dart';
 import 'package:flyfinance/data/services_repository.dart';
 import 'package:flyfinance/services/doc_pdf.dart';
 
+import 'old_schema.dart';
+
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   late AppDatabase db;
@@ -234,6 +236,7 @@ void main() {
     // marque version 1.
     final old = AppDatabase(NativeDatabase(file));
     await Repository(old).addContact('Ancien client');
+    await downgradeToV3(old);
     for (final t in [
       'service_payments',
       'service_doc_lines',

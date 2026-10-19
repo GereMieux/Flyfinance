@@ -59,6 +59,28 @@ entièrement hors ligne.
   vente de la boutique (stock, tableau de bord, carnet d'adresses). Ces
   données sont dans une deuxième base chiffrée (`flyfinance_en_ligne`).
 
+- **Clients et fournisseurs** (depuis l'accueil) :
+  - **Carnet d'adresses** : nom, téléphone et adresse de chaque client et
+    fournisseur, recherche par nom, numéro ou quartier, appel et WhatsApp
+    d'un geste.
+  - **Compte fournisseur** : achats (chaque arrivage entre en stock et met à
+    jour le prix d'achat), frais (transport…), versements en espèces, Orange
+    Money, MTN, Moov, Wave, virement ou chèque, à la date choisie, n° de
+    facture ou de bon, statut Payé / Payé en partie / À payer, ce que je dois
+    ou mon avance. Rien ne se supprime : un achat ou un versement s'annule et
+    reste visible, barré.
+  - **Compte client** : tous ses achats (boutique et factures), ses
+    versements, sa **provision** (argent déposé d'avance, utilisable en un
+    geste pour régler ses achats, ou rendue), et ce qu'il doit encore.
+  - **Annoncer aux clients** : message (prérempli après un arrivage) avec
+    une vidéo ou une photo, envoyé via WhatsApp à une liste de diffusion en
+    un seul envoi, ou client par client ; export des clients en fichier
+    contacts pour créer cette liste.
+  - **Relances** : relancer un client après X jours de dette, puis tous les
+    Y jours, à partir de l'heure choisie, avec un message réglable ({nom},
+    {montant}). Les clients à relancer s'affichent sur l'accueil, et chaque
+    relance ouvre WhatsApp avec le message prêt.
+
 ## Pas encore fait
 
 - Compréhension des phrases libres par l'IA en ligne (Claude), via un serveur
@@ -69,6 +91,9 @@ entièrement hors ligne.
 - Vendeurs avec droits limités, impression de reçus, export PDF / Excel.
 - Paiement Orange Money et Wave automatique (API marchandes) : pour l'instant
   le client paie sur le numéro du commerçant, qui confirme la réception.
+- Notification du téléphone à l'heure des relances quand l'application est
+  fermée, et envoi WhatsApp sans toucher « Envoyer » (WhatsApp ne le permet
+  qu'avec son API Business payante).
 - Photos des articles et boutique en ligne publique (site web où le client
   commande lui-même).
 

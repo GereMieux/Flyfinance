@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
+import '../data/accounts_repository.dart';
 import '../data/repository.dart';
+import 'accounts/client_account_screen.dart';
+import 'accounts/common.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -86,55 +88,63 @@ class _DebtorCard extends StatelessWidget {
       child: Panel(
         child: Column(
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Palette.mintSoft,
-                  child: Text(
-                    d.contact.name.characters.first.toUpperCase(),
-                    style: TextStyle(
-                      color: Palette.mint,
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ClientAccountScreen(d.contact.id),
+                ),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Palette.mintSoft,
+                    child: Text(
+                      d.contact.name.characters.first.toUpperCase(),
+                      style: TextStyle(
+                        color: Palette.mint,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          d.contact.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          'Depuis $days jour${days > 1 ? 's' : ''}',
+                          style: TextStyle(
+                            color: days > 30 ? Palette.red : Palette.muted,
+                            fontWeight: days > 30 ? FontWeight.w700 : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    app.money(d.due),
+                    style: const TextStyle(
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        d.contact.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        'Depuis $days jour${days > 1 ? 's' : ''}',
-                        style: TextStyle(
-                          color: days > 30 ? Palette.red : Palette.muted,
-                          fontWeight: days > 30 ? FontWeight.w700 : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  app.money(d.due),
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _remind(context),
+                    onPressed: () => _remind(context, app),
                     icon: const Icon(Icons.chat_outlined, size: 18),
                     label: const Text('Rappeler'),
                   ),
@@ -157,21 +167,18 @@ class _DebtorCard extends StatelessWidget {
     );
   }
 
-  /// Ouvre WhatsApp avec un message poli déjà écrit. Rien n'est envoyé
-  /// sans que le commerçant appuie lui-même sur Envoyer.
-  Future<void> _remind(BuildContext context) async {
-    final text = Uri.encodeComponent(
-      'Bonjour ${d.contact.name}, petit rappel : il reste ${fcfa(d.due)} à régler à la boutique. Merci !',
-    );
-    final phone = (d.contact.phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    final uri = Uri.parse(
-      phone.isEmpty
-          ? 'https://wa.me/?text=$text'
-          : 'https://wa.me/${phone.length == 10 ? '225$phone' : phone}?text=$text',
-    );
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
-        context.mounted) {
-      toast(context, 'WhatsApp n’a pas pu s’ouvrir.');
+  /// Ouvre WhatsApp avec le message de rappel choisi dans Relances. Rien
+  /// n'est envoyé sans que le commerçant appuie lui-même sur Envoyer.
+  Future<void> _remind(BuildContext context, AppState app) async {
+    final s = await app.repo.reminderSettings();
+    if (!context.mounted) return;
+    if (await openWhatsApp(
+      context,
+      d.contact.phone,
+      s.messageFor(d.contact.name, fcfa(d.due)),
+    )) {
+      await app.repo.markReminded(d.contact.id);
+      app.changed();
     }
   }
 
