@@ -18,8 +18,29 @@ class SaleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final cancelled = s.status == SaleStatus.annulee;
+    final name = s.contact?.name;
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: dense ? 0 : 14),
+      // Pastille avec l'initiale du client, couleur du statut de paiement.
+      leading: CircleAvatar(
+        radius: 21,
+        backgroundColor: statusColor(s.status)
+            .withValues(alpha: Palette.isDark ? 0.18 : 0.14),
+        child: name == null
+            ? Icon(
+                Icons.person_outline_rounded,
+                color: statusColor(s.status),
+                size: 22,
+              )
+            : Text(
+                name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase(),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: statusColor(s.status),
+                ),
+              ),
+      ),
       title: Text(
         s.contact?.name ?? 'Client de passage',
         style: const TextStyle(fontWeight: FontWeight.w700),

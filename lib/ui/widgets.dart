@@ -75,14 +75,24 @@ class _LoaderState<T> extends State<Loader<T>> {
 
 /// Bouton œil : masque ou affiche tous les montants de l'application.
 class EyeButton extends StatelessWidget {
-  const EyeButton({super.key});
+  const EyeButton({super.key, this.onDark = false});
+
+  /// Vrai quand le bouton est posé sur la grande carte verte.
+  final bool onDark;
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
     return IconButton.outlined(
       tooltip: s.hideAmounts ? 'Afficher les montants' : 'Masquer les montants',
-      onPressed: s.toggleAmounts,
-      style: IconButton.styleFrom(side: BorderSide(color: Palette.line)),
+      onPressed: () {
+        Haptics.tap();
+        s.toggleAmounts();
+      },
+      style: IconButton.styleFrom(
+        foregroundColor: onDark ? Colors.white : null,
+        backgroundColor: onDark ? Colors.black.withValues(alpha: 0.18) : null,
+        side: BorderSide(color: onDark ? Colors.transparent : Palette.line),
+      ),
       icon: Icon(
         s.hideAmounts
             ? Icons.visibility_off_outlined
@@ -90,6 +100,125 @@ class EyeButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Icône posée sur une pastille de sa couleur, éclaircie.
+class IconBubble extends StatelessWidget {
+  const IconBubble(this.icon, this.color, {super.key, this.size = 40});
+  final IconData icon;
+  final Color color;
+  final double size;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: Palette.isDark ? 0.16 : 0.12),
+      borderRadius: BorderRadius.circular(size * 0.32),
+    ),
+    child: Icon(icon, color: color, size: size * 0.55),
+  );
+}
+
+/// Titre de rubrique, avec un lien à droite si besoin.
+class SectionTitle extends StatelessWidget {
+  const SectionTitle(this.text, {super.key, this.action, this.onAction});
+  final String text;
+  final String? action;
+  final VoidCallback? onAction;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        if (action != null)
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: Text(action!),
+          ),
+      ],
+    ),
+  );
+}
+
+/// Bandeau d'alerte : icône dans une pastille, titre et détail.
+class AlertTile extends StatelessWidget {
+  const AlertTile({
+    super.key,
+    required this.icon,
+    required this.color,
+    required this.background,
+    required this.title,
+    this.subtitle,
+    this.onTap,
+  });
+  final IconData icon;
+  final Color color;
+  final Color background;
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Material(
+    color: background,
+    borderRadius: BorderRadius.circular(18),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: TextStyle(fontSize: 13, color: Palette.muted),
+                    ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: color),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 Color statusColor(SaleStatus s) => switch (s) {
@@ -106,13 +235,30 @@ class Panel extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final Color? color;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: padding ?? const EdgeInsets.all(16),
+  Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      // En mode jour, une ombre très légère détache les cartes du fond.
+      boxShadow: Palette.isDark
+          ? null
+          : const [
+              BoxShadow(
+                color: Color(0x0F13201B),
+                blurRadius: 16,
+                offset: Offset(0, 4),
+              ),
+            ],
+    ),
+    // Un Material pour que les effets de toucher des listes restent visibles.
+    child: Material(
       color: color ?? Palette.card,
       borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: child,
+      ),
     ),
-    child: child,
   );
 }
 
