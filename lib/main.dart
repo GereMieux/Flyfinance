@@ -13,6 +13,7 @@ import 'security/lock_service.dart';
 import 'ui/lock_screen.dart';
 import 'ui/shell.dart';
 import 'ui/theme.dart';
+import 'ui/widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,13 +46,21 @@ class GereMieuxApp extends StatefulWidget {
 
 class _GereMieuxAppState extends State<GereMieuxApp>
     with WidgetsBindingObserver {
-  late final AppState _state = AppState(widget.repo);
+  late final AppState _state = AppState(widget.repo, store: widget.lock.store)
+    ..addListener(_onPrefs);
+
+  /// Mode clair ou sombre réellement affiché.
+  Brightness? _shown;
+
+  /// Vrai quand l'application passe en arrière-plan : on cache alors les
+  /// chiffres dans l'aperçu des applications récentes.
+  bool _privacy = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    _state.loadPrefs();
   }
 
   @override
@@ -64,10 +73,43 @@ class _GereMieuxAppState extends State<GereMieuxApp>
   void didChangeAppLifecycleState(AppLifecycleState s) {
     if (s == AppLifecycleState.paused) widget.lock.onPaused();
     if (s == AppLifecycleState.resumed) widget.lock.onResumed();
+    final hide = s != AppLifecycleState.resumed;
+    if (hide != _privacy) setState(() => _privacy = hide);
+  }
+
+  @override
+  void didChangePlatformBrightness() => setState(() {});
+
+  void _onPrefs() => setState(() {});
+
+  Brightness _brightness() => switch (_state.appearance) {
+    Appearance.jour => Brightness.light,
+    Appearance.nuit => Brightness.dark,
+    Appearance.auto =>
+      WidgetsBinding.instance.platformDispatcher.platformBrightness,
+  };
+
+  /// Les couleurs de [Palette] sont lues à la construction des écrans : au
+  /// changement de mode, on reconstruit donc tout, y compris les pages
+  /// ouvertes, sans perdre ce qui est en cours de saisie.
+  void _repaintAll() {
+    void visit(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(visit);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) (context as Element).visitChildren(visit);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final b = _brightness();
+    if (_shown != null && _shown != b) _repaintAll();
+    _shown = b;
+    final theme = buildTheme(b);
+    SystemChrome.setSystemUIOverlayStyle(overlayStyle(b));
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _state),
@@ -77,7 +119,27 @@ class _GereMieuxAppState extends State<GereMieuxApp>
       child: MaterialApp(
         title: 'FLYFINANCE',
         debugShowCheckedModeBanner: false,
-        theme: buildTheme(),
+        theme: theme,
+        themeAnimationDuration: Duration.zero,
+        // Le texte suit la taille choisie dans le téléphone, sans casser
+        // la mise en page.
+        builder: (context, child) {
+          final mq = MediaQuery.of(context);
+          return MediaQuery(
+            data: mq.copyWith(
+              textScaler: mq.textScaler.clamp(
+                minScaleFactor: 0.9,
+                maxScaleFactor: 1.3,
+              ),
+            ),
+            child: Stack(
+              children: [
+                child!,
+                if (_privacy) const Positioned.fill(child: PrivacyCover()),
+              ],
+            ),
+          );
+        },
         // Calendriers et heures en français (choix des dates d'échéance).
         locale: const Locale('fr'),
         supportedLocales: const [Locale('fr'), Locale('en')],

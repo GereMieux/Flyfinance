@@ -1,8 +1,8 @@
 import 'package:flyfinance/data/database.dart';
 
-/// Ramène une base neuve au schéma de la version 2 (avant les comptes
+/// Ramène une base neuve au schéma de la version 3 (avant les comptes
 /// fournisseurs et clients), pour tester la mise à jour.
-Future<void> downgradeToV2(AppDatabase db) async {
+Future<void> downgradeToV3(AppDatabase db) async {
   await db.customStatement('PRAGMA foreign_keys = OFF');
   await db.customStatement('PRAGMA legacy_alter_table = ON');
   for (final t in ['account_entries', 'purchase_lines', 'purchases']) {
@@ -30,5 +30,5 @@ Future<void> downgradeToV2(AppDatabase db) async {
     'created_at FROM stock_moves_v3',
   );
   await db.customStatement('DROP TABLE stock_moves_v3');
-  await db.customStatement('PRAGMA user_version = 2');
+  await db.customStatement('PRAGMA user_version = 3');
 }

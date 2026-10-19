@@ -43,9 +43,7 @@ class ClientAccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Panel(
-              color: a.due > 0
-                  ? const Color(0xFF2A2414)
-                  : const Color(0xFF18302A),
+              color: a.due > 0 ? Palette.amberSoft : Palette.hero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -84,27 +82,21 @@ class ClientAccountScreen extends StatelessWidget {
             if (a.provision > 0 && a.due > 0) ...[
               const SizedBox(height: 12),
               Material(
-                color: const Color(0xFF1B2A3A),
+                color: Palette.blue.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
                 child: ListTile(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  leading: const Icon(
-                    Icons.savings_outlined,
-                    color: Palette.blue,
-                  ),
+                  leading: Icon(Icons.savings_outlined, color: Palette.blue),
                   title: Text(
                     'Régler ${app.money(a.provision < a.due ? a.provision : a.due)} avec sa provision',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: Palette.blue,
                     ),
                   ),
-                  trailing: const Icon(
-                    Icons.chevron_right,
-                    color: Palette.blue,
-                  ),
+                  trailing: Icon(Icons.chevron_right, color: Palette.blue),
                   onTap: () => _useProvision(context, app),
                 ),
               ),

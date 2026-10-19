@@ -186,7 +186,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 child: Center(
                   child: Text(
                     i.name.characters.first.toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w700,
                       color: Palette.muted,
@@ -218,7 +218,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                   ),
                 ),
               if (i.stock <= 0)
-                const Positioned(
+                Positioned(
                   bottom: 6,
                   left: 6,
                   child: Text(
@@ -247,7 +247,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
           ].whereType<String>().join(' · '),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Palette.muted, fontSize: 12),
+          style: TextStyle(color: Palette.muted, fontSize: 12),
         ),
         Row(
           children: [
@@ -267,7 +267,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 child: Text(
                   fcfa(i.basePrice, unit: false),
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Palette.muted,
                     fontSize: 12,
                     decoration: TextDecoration.lineThrough,

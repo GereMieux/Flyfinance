@@ -236,7 +236,7 @@ void main() {
     // marque version 1.
     final old = AppDatabase(NativeDatabase(file));
     await Repository(old).addContact('Ancien client');
-    await downgradeToV2(old);
+    await downgradeToV3(old);
     for (final t in [
       'service_payments',
       'service_doc_lines',

@@ -220,14 +220,14 @@ void main() {
     });
   });
 
-  test('une base de la version 2 reçoit les comptes', () async {
+  test('une base de la version 3 reçoit les comptes', () async {
     final dir = await Directory.systemTemp.createTemp('flyfinance');
-    final file = File('${dir.path}/v2.db');
+    final file = File('${dir.path}/v3.db');
     final old = AppDatabase(NativeDatabase(file));
     final r1 = Repository(old);
     await r1.addProduct(name: 'Sucre', price: 1000, initialQty: 4);
     await r1.addContact('Ancien client', phone: '0102030405');
-    await downgradeToV2(old);
+    await downgradeToV3(old);
     await old.close();
 
     final db2 = AppDatabase(NativeDatabase(file));

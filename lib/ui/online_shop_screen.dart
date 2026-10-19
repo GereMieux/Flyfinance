@@ -47,12 +47,15 @@ class OnlineShopScreen extends StatelessWidget {
               ),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorColor: Palette.amber,
             labelColor: Palette.text,
             unselectedLabelColor: Palette.muted,
-            labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-            tabs: [
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+            tabs: const [
               Tab(icon: Icon(Icons.local_shipping_outlined), text: 'Commandes'),
               Tab(icon: Icon(Icons.shopping_bag_outlined), text: 'Catalogue'),
               Tab(icon: Icon(Icons.local_offer_outlined), text: 'Promos'),
@@ -190,17 +193,14 @@ class _OrdersTabState extends State<_OrdersTab> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Material(
-                  color: const Color(0xFF3A2F1B),
+                  color: Palette.amberSoft,
                   borderRadius: BorderRadius.circular(16),
                   child: ListTile(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    leading: const Icon(
-                      Icons.phone_android,
-                      color: Palette.amber,
-                    ),
-                    title: const Text(
+                    leading: Icon(Icons.phone_android, color: Palette.amber),
+                    title: Text(
                       'Ajoutez vos numéros Orange Money et Wave',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
@@ -208,10 +208,7 @@ class _OrdersTabState extends State<_OrdersTab> {
                       ),
                     ),
                     subtitle: const Text('Pour être payé à distance.'),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Palette.amber,
-                    ),
+                    trailing: Icon(Icons.chevron_right, color: Palette.amber),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const ShopSettingsScreen(),
@@ -260,10 +257,7 @@ class _OrdersTabState extends State<_OrdersTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Palette.muted),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Palette.muted)),
           FittedBox(
             child: Text(
               value,
@@ -298,7 +292,7 @@ class _OrdersTabState extends State<_OrdersTab> {
         ),
         subtitle: Text(
           '${shortDate(o.order.createdAt)}\n${onlinePayMethods[o.order.payMethod]}${o.order.paid ? ' · payé' : ''}',
-          style: const TextStyle(color: Palette.muted),
+          style: TextStyle(color: Palette.muted),
         ),
         isThreeLine: true,
         trailing: Column(
@@ -358,13 +352,10 @@ class OrderScreen extends StatelessWidget {
                     if (o.phone.isNotEmpty) Text('Tél. ${o.phone}'),
                     if (o.address.isNotEmpty) Text('Livrer à : ${o.address}'),
                     if (o.note.isNotEmpty)
-                      Text(
-                        o.note,
-                        style: const TextStyle(color: Palette.muted),
-                      ),
+                      Text(o.note, style: TextStyle(color: Palette.muted)),
                     Text(
                       shortDate(o.createdAt),
-                      style: const TextStyle(color: Palette.muted),
+                      style: TextStyle(color: Palette.muted),
                     ),
                   ],
                 ),
@@ -380,7 +371,7 @@ class OrderScreen extends StatelessWidget {
                       ),
                     if (o.deliveryFee > 0)
                       _row('Livraison', app.money(o.deliveryFee)),
-                    const Divider(color: Palette.line),
+                    Divider(color: Palette.line),
                     _row('Total à payer', app.money(d.toPay), bold: true),
                     _row(
                       onlinePayMethods[o.payMethod]!,
@@ -393,7 +384,7 @@ class OrderScreen extends StatelessWidget {
               const SizedBox(height: 16),
               if (d.status.open) ..._actions(context, app, shop, d, info),
               if (d.status == OrderStatus.livree)
-                const Text(
+                Text(
                   'Livrée : la vente est dans « Toutes les ventes » et le stock est à jour.',
                   style: TextStyle(color: Palette.mint),
                 ),
@@ -496,7 +487,7 @@ class OrderScreen extends StatelessWidget {
             );
           }
         },
-        child: const Text(
+        child: Text(
           'Annuler la commande',
           style: TextStyle(color: Palette.red),
         ),
@@ -609,15 +600,14 @@ class _CatalogTabState extends State<_CatalogTab> {
                             if (c.sizes.isNotEmpty) c.sizes.join('/'),
                             if (c.colors.isNotEmpty) c.colors.join('/'),
                           ].whereType<String>().join(' · '),
-                          style: const TextStyle(color: Palette.muted),
+                          style: TextStyle(color: Palette.muted),
                         ),
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 6,
                           runSpacing: 4,
                           children: [
-                            if (!c.item.published)
-                              const _Tag('Masqué', Palette.grey),
+                            if (!c.item.published) _Tag('Masqué', Palette.grey),
                             if (c.onPromo)
                               _Tag(c.promotion!.title, Palette.amber),
                             _Tag(
@@ -642,7 +632,7 @@ class _CatalogTabState extends State<_CatalogTab> {
                         if (c.onPromo)
                           Text(
                             app.money(c.basePrice),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Palette.muted,
                               fontSize: 12,
                               decoration: TextDecoration.lineThrough,
@@ -731,23 +721,23 @@ class _PromosTab extends StatelessWidget {
                                     fontSize: 16,
                                   ),
                                 ),
-                                if (p.isSale) const _Tag('Soldes', Palette.red),
+                                if (p.isSale) _Tag('Soldes', Palette.red),
                                 if (t.isBefore(p.startsAt))
-                                  const _Tag('À venir', Palette.blue)
+                                  _Tag('À venir', Palette.blue)
                                 else if (t.isBefore(p.endsAt))
-                                  const _Tag('En cours', Palette.mint)
+                                  _Tag('En cours', Palette.mint)
                                 else
-                                  const _Tag('Terminée', Palette.grey),
+                                  _Tag('Terminée', Palette.grey),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '${p.percent != null ? '−${p.percent} %' : app.money(p.promoPrice!)} · ${target(p)}',
-                              style: const TextStyle(color: Palette.amber),
+                              style: TextStyle(color: Palette.amber),
                             ),
                             Text(
                               'Du ${dayDate(p.startsAt)} au ${dayDate(p.endsAt)}',
-                              style: const TextStyle(color: Palette.muted),
+                              style: TextStyle(color: Palette.muted),
                             ),
                             if (p.details.isNotEmpty) Text(p.details),
                           ],

@@ -360,6 +360,24 @@ class Repository {
     ]..sort((a, b) => b.cancelledAt.compareTo(a.cancelledAt));
   }
 
+  /// Vide la corbeille : efface pour de bon les ventes annulées. Le stock
+  /// ne bouge pas (la sortie et le retour s'annulaient déjà). Ne s'appelle
+  /// qu'après le code secret (voir `TrashScreen`). Renvoie le nombre effacé.
+  Future<int> emptyTrash() => db.transaction(() async {
+    final ids = [
+      for (final s in await (db.select(
+        db.sales,
+      )..where((s) => s.cancelled.equals(true))).get())
+        s.id,
+    ];
+    if (ids.isEmpty) return 0;
+    await (db.delete(db.payments)..where((p) => p.saleId.isIn(ids))).go();
+    await (db.delete(db.stockMoves)..where((m) => m.saleId.isIn(ids))).go();
+    await (db.delete(db.saleLines)..where((l) => l.saleId.isIn(ids))).go();
+    await (db.delete(db.sales)..where((s) => s.id.isIn(ids))).go();
+    return ids.length;
+  });
+
   Future<List<SaleDetail>> _withLines(List<SaleSummary> list) async {
     final ids = [for (final s in list) s.sale.id];
     final rows = await (db.select(db.saleLines).join([

@@ -65,10 +65,7 @@ class CatalogueScreen extends StatelessWidget {
                   await repo.archiveService(s.id);
                   if (ctx.mounted) Navigator.pop(ctx, true);
                 },
-                child: const Text(
-                  'Retirer',
-                  style: TextStyle(color: Palette.red),
-                ),
+                child: Text('Retirer', style: TextStyle(color: Palette.red)),
               ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -103,7 +100,7 @@ class CatalogueScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Mes prestations')),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Palette.green,
-        foregroundColor: Palette.text,
+        foregroundColor: Colors.white,
         onPressed: () => _edit(context),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter'),

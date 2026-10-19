@@ -59,7 +59,7 @@ class RemindersScreen extends StatelessWidget {
                         s.enabled
                             ? 'Chaque jour à ${_hm(s.hour, s.minute)}, les clients à relancer sont prêts.'
                             : 'Désactivées',
-                        style: const TextStyle(color: Palette.muted),
+                        style: TextStyle(color: Palette.muted),
                       ),
                       value: s.enabled,
                       onChanged: (v) => _save(app, _copy(s, enabled: v)),
@@ -160,13 +160,13 @@ class RemindersScreen extends StatelessWidget {
                   ),
                   Text(
                     '${app.money(d.due)} · depuis $days jour${days > 1 ? 's' : ''}',
-                    style: const TextStyle(color: Palette.amber),
+                    style: TextStyle(color: Palette.amber),
                   ),
                   Text(
                     last == null
                         ? 'Jamais relancé'
                         : 'Relancé le ${shortDate(last)}',
-                    style: const TextStyle(color: Palette.muted, fontSize: 13),
+                    style: TextStyle(color: Palette.muted, fontSize: 13),
                   ),
                 ],
               ),
@@ -208,12 +208,12 @@ class RemindersScreen extends StatelessWidget {
 
   Widget _setting(String label, String value, VoidCallback onTap) => ListTile(
     contentPadding: const EdgeInsets.only(right: 4),
-    title: Text(label, style: const TextStyle(color: Palette.muted)),
+    title: Text(label, style: TextStyle(color: Palette.muted)),
     subtitle: Text(
       value,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.text),
+      style: TextStyle(fontWeight: FontWeight.w700, color: Palette.text),
     ),
     trailing: const Icon(Icons.edit_outlined, size: 20),
     onTap: onTap,
@@ -241,7 +241,7 @@ class RemindersScreen extends StatelessWidget {
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '{nom} devient le nom du client, {montant} ce qu’il doit.',
               style: TextStyle(color: Palette.muted, fontSize: 13),
             ),

@@ -100,7 +100,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 style: SegmentedButton.styleFrom(
                   selectedBackgroundColor: Palette.amber,
                   selectedForegroundColor: Palette.ink,
-                  side: const BorderSide(color: Palette.line),
+                  side: BorderSide(color: Palette.line),
                 ),
                 segments: [
                   ButtonSegment(
@@ -117,9 +117,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
               ),
               const SizedBox(height: 12),
               Panel(
-                color: _suppliers
-                    ? const Color(0xFF3A1F1B)
-                    : const Color(0xFF2A2414),
+                color: _suppliers ? Palette.redSoft : Palette.amberSoft,
                 child: Row(
                   children: [
                     Expanded(
@@ -245,12 +243,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
         onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: supplier
-              ? const Color(0xFF2E2440)
-              : const Color(0xFF1F3A2F),
+              ? Palette.purple.withValues(alpha: 0.15)
+              : Palette.mintSoft,
           child: Text(
             name.characters.first.toUpperCase(),
             style: TextStyle(
-              color: supplier ? const Color(0xFFCFA6E8) : Palette.mint,
+              color: supplier ? Palette.purple : Palette.mint,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -262,10 +260,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 sub,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Palette.muted),
+                style: TextStyle(color: Palette.muted),
               ),
         trailing: amount == null
-            ? const Icon(Icons.chevron_right, color: Palette.muted)
+            ? Icon(Icons.chevron_right, color: Palette.muted)
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,

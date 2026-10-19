@@ -280,7 +280,7 @@ class MoveTile extends StatelessWidget {
                       shortDate(m.at),
                       if (m.detail.isNotEmpty) m.detail,
                     ].join(' · '),
-                    style: const TextStyle(color: Palette.muted, fontSize: 13),
+                    style: TextStyle(color: Palette.muted, fontSize: 13),
                   ),
                 ],
               ),
@@ -316,13 +316,13 @@ class ContactHeader extends StatelessWidget {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: supplier
-                    ? const Color(0xFF2E2440)
-                    : const Color(0xFF1F3A2F),
+                    ? Palette.purple.withValues(alpha: 0.15)
+                    : Palette.mintSoft,
                 child: Text(
                   c.name.characters.first.toUpperCase(),
                   style: TextStyle(
                     fontSize: 20,
-                    color: supplier ? const Color(0xFFCFA6E8) : Palette.mint,
+                    color: supplier ? Palette.purple : Palette.mint,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -381,7 +381,7 @@ class ContactHeader extends StatelessWidget {
         Icon(icon, size: 16, color: Palette.muted),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(text, style: const TextStyle(color: Palette.muted)),
+          child: Text(text, style: TextStyle(color: Palette.muted)),
         ),
       ],
     ),

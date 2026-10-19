@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../security/lock_service.dart';
 import 'theme.dart';
+import 'widgets.dart';
 
 /// Écran de verrouillage. Au premier lancement il fait choisir le code
 /// (deux fois), ensuite il le demande, ou l'empreinte.
@@ -21,6 +24,9 @@ class _LockScreenState extends State<LockScreen> {
   bool _bio = false;
   String? _error;
   Timer? _tick;
+
+  /// Augmente à chaque code faux : relance la secousse des points.
+  int _shakes = 0;
 
   LockService get _lock => context.read<LockService>();
 
@@ -60,6 +66,7 @@ class _LockScreenState extends State<LockScreen> {
 
   Future<void> _press(String d) async {
     if (_pin.length >= 4 || _lock.lockoutRemaining != null) return;
+    Haptics.tap();
     setState(() {
       _pin += d;
       _error = null;
@@ -75,9 +82,11 @@ class _LockScreenState extends State<LockScreen> {
       } else if (_first == _pin) {
         await _lock.setPin(_pin);
       } else {
+        Haptics.warning();
         setState(() {
           _first = null;
           _pin = '';
+          _shakes++;
           _error = 'Les deux codes sont différents. Recommencez.';
         });
       }
@@ -85,8 +94,10 @@ class _LockScreenState extends State<LockScreen> {
     }
     final ok = await _lock.unlockWithPin(_pin);
     if (!ok && mounted) {
+      Haptics.warning();
       setState(() {
         _pin = '';
+        _shakes++;
         _error = 'Code incorrect';
       });
       if (_lock.lockoutRemaining != null) {
@@ -169,38 +180,56 @@ class _LockScreenState extends State<LockScreen> {
                         'FLYFINANCE',
                         style: TextStyle(
                           fontSize: 28,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         _prompt,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Palette.muted,
-                        ),
+                        style: TextStyle(fontSize: 16, color: Palette.muted),
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          for (var i = 0; i < 4; i++)
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 9),
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: i < _pin.length ? Palette.amber : null,
-                                border: i < _pin.length
-                                    ? null
-                                    : Border.all(
-                                        color: const Color(0xFF4A5A52),
-                                        width: 2,
-                                      ),
+                      // Les points tremblent quand le code est faux, comme
+                      // sur les applications bancaires.
+                      TweenAnimationBuilder<double>(
+                        key: ValueKey(_shakes),
+                        tween: Tween(begin: _shakes == 0 ? 1 : 0, end: 1),
+                        duration: const Duration(milliseconds: 420),
+                        builder: (_, v, child) => Transform.translate(
+                          offset: Offset(
+                            math.sin(v * math.pi * 6) * 12 * (1 - v),
+                            0,
+                          ),
+                          child: child,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            for (var i = 0; i < 4; i++)
+                              AnimatedContainer(
+                                duration: Motion.fast,
+                                curve: Motion.curve,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 9,
+                                ),
+                                width: i < _pin.length ? 18 : 16,
+                                height: i < _pin.length ? 18 : 16,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: i < _pin.length
+                                      ? Palette.amber
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: i < _pin.length
+                                        ? Palette.amber
+                                        : Palette.faint,
+                                    width: 2,
+                                  ),
+                                ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -209,7 +238,7 @@ class _LockScreenState extends State<LockScreen> {
                             ? null
                             : Text(
                                 _error!,
-                                style: const TextStyle(color: Palette.red),
+                                style: TextStyle(color: Palette.red),
                               ),
                       ),
                       const Spacer(),
@@ -233,7 +262,7 @@ class _LockScreenState extends State<LockScreen> {
                                   'Empreinte',
                                   semantics: 'Déverrouiller avec l’empreinte',
                                   onTap: () => _lock.unlockWithBiometrics(),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.fingerprint,
                                     size: 38,
                                     color: Palette.amber,
@@ -244,17 +273,18 @@ class _LockScreenState extends State<LockScreen> {
                           key(
                             'Effacer',
                             semantics: 'Effacer un chiffre',
-                            onTap: () => setState(
-                              () => _pin = _pin.isEmpty
+                            onTap: () => setState(() {
+                              Haptics.tap();
+                              _pin = _pin.isEmpty
                                   ? ''
-                                  : _pin.substring(0, _pin.length - 1),
-                            ),
+                                  : _pin.substring(0, _pin.length - 1);
+                            }),
                             child: const Icon(Icons.backspace_outlined),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
@@ -262,7 +292,7 @@ class _LockScreenState extends State<LockScreen> {
                             size: 16,
                             color: Palette.mint,
                           ),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           Flexible(
                             child: Text(
                               'Données chiffrées sur ce téléphone',

@@ -132,11 +132,11 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
               ),
               const SizedBox(height: 12),
               Panel(
-                color: const Color(0xFF1B2A3A),
+                color: Palette.blue.withValues(alpha: 0.12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Comment ça marche',
                       style: TextStyle(
                         color: Palette.blue,
@@ -153,7 +153,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                       'le monde reçoit le message et la vidéo en un seul envoi.',
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Vos clients doivent avoir votre numéro enregistré pour '
                       'recevoir une diffusion.',
                       style: TextStyle(color: Palette.muted),
@@ -186,10 +186,10 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                   ),
                   subtitle: Text(
                     c.phone!,
-                    style: const TextStyle(color: Palette.muted),
+                    style: TextStyle(color: Palette.muted),
                   ),
                   trailing: _sent.contains(c.id)
-                      ? const Icon(Icons.check_circle, color: Palette.mint)
+                      ? Icon(Icons.check_circle, color: Palette.mint)
                       : const Icon(Icons.send_outlined),
                   onTap: () async {
                     if (await openWhatsApp(context, c.phone, _text.text)) {

@@ -71,13 +71,13 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     subtitle: _lines[i].product == null
-                        ? const Text(
+                        ? Text(
                             'Dépense',
                             style: TextStyle(color: Palette.muted),
                           )
                         : Text(
                             '${fcfa(_lines[i].unitCost)} l’unité',
-                            style: const TextStyle(color: Palette.muted),
+                            style: TextStyle(color: Palette.muted),
                           ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -119,7 +119,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           Panel(
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Total de l’achat',
                     style: TextStyle(color: Palette.muted),
@@ -141,7 +141,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             style: SegmentedButton.styleFrom(
               selectedBackgroundColor: Palette.amber,
               selectedForegroundColor: Palette.ink,
-              side: const BorderSide(color: Palette.line),
+              side: BorderSide(color: Palette.line),
             ),
             segments: const [
               ButtonSegment(value: _Pay.tout, label: Text('Tout payé')),
@@ -183,7 +183,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 'Reste à payer au fournisseur : ${fcfa(_total - _paid)}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Palette.amber,
                   fontWeight: FontWeight.w700,
                 ),
@@ -469,7 +469,7 @@ class _ProductPickerState extends State<_ProductPicker> {
                         p.cost > 0
                             ? 'Dernier prix d’achat ${fcfa(p.cost)}'
                             : p.unit,
-                        style: const TextStyle(color: Palette.muted),
+                        style: TextStyle(color: Palette.muted),
                       ),
                       onTap: () => Navigator.pop(context, p),
                     ),

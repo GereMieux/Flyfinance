@@ -47,7 +47,7 @@ class SupplierAccountScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Panel(
-                color: owe ? const Color(0xFF3A1F1B) : const Color(0xFF18302A),
+                color: owe ? Palette.redSoft : Palette.hero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -197,7 +197,7 @@ class SupplierAccountScreen extends StatelessWidget {
                   s.status.label,
                   if (s.due > 0) 'reste ${app.money(s.due)}',
                 ].join(' · '),
-                style: const TextStyle(color: Palette.muted),
+                style: TextStyle(color: Palette.muted),
               ),
               if (p.note != null) ...[const SizedBox(height: 6), Text(p.note!)],
               const SizedBox(height: 12),
@@ -220,7 +220,7 @@ class SupplierAccountScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              const Divider(color: Palette.line),
+              Divider(color: Palette.line),
               Row(
                 children: [
                   const Expanded(

@@ -35,11 +35,11 @@ class CreditsScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
               Panel(
-                color: const Color(0xFF2A2414),
+                color: Palette.amberSoft,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'On vous doit au total',
                       style: TextStyle(color: Palette.amber),
                     ),
@@ -55,7 +55,7 @@ class CreditsScreen extends StatelessWidget {
                     Text(
                       '${list.length} client${list.length > 1 ? 's' : ''}'
                       '${late > 0 ? ' · $late en retard de plus de 30 jours' : ''}',
-                      style: const TextStyle(color: Palette.amber),
+                      style: TextStyle(color: Palette.amber),
                     ),
                   ],
                 ),
@@ -98,10 +98,10 @@ class _DebtorCard extends StatelessWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: const Color(0xFF1F3A2F),
+                    backgroundColor: Palette.mintSoft,
                     child: Text(
                       d.contact.name.characters.first.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Palette.mint,
                         fontWeight: FontWeight.w700,
                       ),

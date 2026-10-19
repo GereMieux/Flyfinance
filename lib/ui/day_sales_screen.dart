@@ -100,11 +100,11 @@ class _DaySalesScreenState extends State<DaySalesScreen> {
               ),
               const SizedBox(height: 8),
               Panel(
-                color: const Color(0xFF18302A),
+                color: Palette.hero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Total des ventes',
                       style: TextStyle(color: Palette.muted),
                     ),
@@ -153,7 +153,7 @@ class _DaySalesScreenState extends State<DaySalesScreen> {
                           ),
                           subtitle: Text(
                             '${p.$2} vendu${p.$2 > 1 ? 's' : ''}',
-                            style: const TextStyle(color: Palette.muted),
+                            style: TextStyle(color: Palette.muted),
                           ),
                           trailing: Text(
                             app.money(p.$3),
@@ -167,7 +167,10 @@ class _DaySalesScreenState extends State<DaySalesScreen> {
               const SizedBox(height: 16),
               const _Title('Toutes les ventes'),
               if (d.details.isEmpty)
-                const EmptyState('Aucune vente ce jour-là.'),
+                const EmptyState(
+                  'Aucune vente ce jour-là.',
+                  icon: Icons.event_note_outlined,
+                ),
               for (final s in d.details) SaleCard(s),
             ],
           );
@@ -237,7 +240,7 @@ class SaleCard extends StatelessWidget {
           ),
           subtitle: Text(
             '${note ?? time} · ${d.lines.length} article${d.lines.length > 1 ? 's' : ''}',
-            style: const TextStyle(color: Palette.muted),
+            style: TextStyle(color: Palette.muted),
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -273,7 +276,7 @@ class SaleCard extends StatelessWidget {
                   ],
                 ),
               ),
-            const Divider(color: Palette.line),
+            Divider(color: Palette.line),
             _row('Payé', app.money(s.paid), Palette.mint),
             if (s.due > 0)
               _row('Reste à payer', app.money(s.due), Palette.amber),
@@ -290,7 +293,7 @@ class SaleCard extends StatelessWidget {
     child: Row(
       children: [
         Expanded(
-          child: Text(label, style: const TextStyle(color: Palette.muted)),
+          child: Text(label, style: TextStyle(color: Palette.muted)),
         ),
         Text(
           value,
