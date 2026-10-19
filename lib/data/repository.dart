@@ -75,6 +75,24 @@ class ProductSales {
   final int margin;
 }
 
+/// Une ligne de vente avec le nom de l'article, pour le détail des ventes.
+class SaleLineDetail {
+  SaleLineDetail(this.product, this.qty, this.unitPrice);
+  final Product product;
+  final int qty;
+  final int unitPrice;
+  int get total => qty * unitPrice;
+  int get margin => qty * (unitPrice - product.cost);
+}
+
+class SaleDetail {
+  SaleDetail(this.summary, this.lines);
+  final SaleSummary summary;
+  final List<SaleLineDetail> lines;
+  int get margin =>
+      summary.sale.cancelled ? 0 : lines.fold(0, (s, l) => s + l.margin);
+}
+
 class PeriodStats {
   PeriodStats(this.sales, this.profit, this.cashIn, this.count);
   final int sales;
@@ -278,11 +296,12 @@ class Repository {
     }
   });
 
-  Future<List<SaleSummary>> sales({DateTime? from}) async {
+  Future<List<SaleSummary>> sales({DateTime? from, DateTime? to}) async {
     final q = db.select(db.sales).join([
       leftOuterJoin(db.contacts, db.contacts.id.equalsExp(db.sales.contactId)),
     ])..orderBy([OrderingTerm.desc(db.sales.createdAt)]);
     if (from != null) q.where(db.sales.createdAt.isBiggerOrEqualValue(from));
+    if (to != null) q.where(db.sales.createdAt.isSmallerThanValue(to));
     final rows = await q.get();
     final pays = await db.select(db.payments).get();
     final paid = <int, int>{};
@@ -300,6 +319,34 @@ class Repository {
           paidLater: later[r.readTable(db.sales).id] ?? 0,
         ),
     ];
+  }
+
+  /// Ventes d'une journée avec leurs articles, de la plus récente à la plus
+  /// ancienne.
+  Future<List<SaleDetail>> dayDetails(DateTime day) async {
+    final from = DateTime(day.year, day.month, day.day);
+    final to = DateTime(day.year, day.month, day.day + 1);
+    final list = await sales(from: from, to: to);
+    final rows =
+        await (db.select(db.saleLines).join([
+              innerJoin(db.sales, db.sales.id.equalsExp(db.saleLines.saleId)),
+              innerJoin(
+                db.products,
+                db.products.id.equalsExp(db.saleLines.productId),
+              ),
+            ])..where(
+              db.sales.createdAt.isBiggerOrEqualValue(from) &
+                  db.sales.createdAt.isSmallerThanValue(to),
+            ))
+            .get();
+    final lines = <int, List<SaleLineDetail>>{};
+    for (final r in rows) {
+      final l = r.readTable(db.saleLines);
+      (lines[l.saleId] ??= []).add(
+        SaleLineDetail(r.readTable(db.products), l.qty, l.unitPrice),
+      );
+    }
+    return [for (final s in list) SaleDetail(s, lines[s.sale.id] ?? [])];
   }
 
   // ---------- Crédits ----------
@@ -356,8 +403,14 @@ class Repository {
 
   // ---------- Tableau de bord ----------
 
-  Future<PeriodStats> statsSince(DateTime from) async {
-    final list = (await sales(from: from)).where((s) => !s.sale.cancelled);
+  /// Chiffres de `from` jusqu'à `to` exclu (sans `to` : jusqu'à maintenant).
+  /// Le bénéfice est calculé sur le prix réellement vendu moins le coût
+  /// d'achat de l'article.
+  Future<PeriodStats> statsSince(DateTime from, {DateTime? to}) async {
+    final list = (await sales(
+      from: from,
+      to: to,
+    )).where((s) => !s.sale.cancelled);
     var total = 0, cost = 0;
     for (final s in list) {
       total += s.sale.total;
@@ -371,15 +424,24 @@ class Repository {
               ),
             ])..where(
               db.sales.createdAt.isBiggerOrEqualValue(from) &
+                  (to == null
+                      ? const Constant(true)
+                      : db.sales.createdAt.isSmallerThanValue(to)) &
                   db.sales.cancelled.equals(false),
             ))
             .get();
     for (final r in lines) {
       cost += r.readTable(db.saleLines).qty * r.readTable(db.products).cost;
     }
-    final pays = await (db.select(
-      db.payments,
-    )..where((p) => p.createdAt.isBiggerOrEqualValue(from))).get();
+    final pays =
+        await (db.select(db.payments)..where(
+              (p) =>
+                  p.createdAt.isBiggerOrEqualValue(from) &
+                  (to == null
+                      ? const Constant(true)
+                      : p.createdAt.isSmallerThanValue(to)),
+            ))
+            .get();
     final cashIn = pays.fold<int>(0, (s, p) => s + p.amount);
     return PeriodStats(total, total - cost, cashIn, list.length);
   }

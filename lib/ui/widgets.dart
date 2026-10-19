@@ -175,3 +175,26 @@ Future<int?> askNumber(
   );
   return v;
 }
+
+/// Petit encadré « libellé / valeur » utilisé sous les gros montants.
+Widget statChip(String label, String value, Color color) => Expanded(
+  child: Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Palette.cardHigh,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Palette.muted)),
+        FittedBox(
+          child: Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w700, color: color),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
