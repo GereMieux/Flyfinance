@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app_state.dart';
-import '../../data/database.dart';
 import '../../data/repository.dart';
 import '../../data/services_repository.dart';
+import '../agenda/agenda_view.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'business_screen.dart';
@@ -51,7 +51,7 @@ class ServicesScreen extends StatelessWidget {
             _DashboardTab(),
             _DocsTab(DocKind.devis),
             _DocsTab(DocKind.facture),
-            _AgendaTab(),
+            AgendaView(),
           ],
         ),
       ),
@@ -172,7 +172,7 @@ class _DashboardTab extends StatelessWidget {
               'Aucun rendez-vous prévu.',
               icon: Icons.event_available_outlined,
             ),
-          for (final a in d.upcoming) _AppointmentTile(a),
+          for (final a in d.upcoming) AppointmentTile(a),
           const SizedBox(height: 18),
           const Text(
             'Réglages',
@@ -410,244 +410,6 @@ class _DocsTabState extends State<_DocsTab> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-// ---------- Agenda ----------
-
-Future<void> addAppointment(BuildContext context) async {
-  final repo = context.read<AppState>().repo;
-  final title = TextEditingController();
-  final place = TextEditingController();
-  final now = DateTime.now();
-  var day = DateTime(now.year, now.month, now.day + 1);
-  var time = const TimeOfDay(hour: 9, minute: 0);
-  Contact? client;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, set) => AlertDialog(
-        backgroundColor: Palette.card,
-        title: const Text('Nouveau rendez-vous'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: title,
-                autofocus: true,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Quoi ? (ex. Réparation frigo)',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: place,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Où ? (facultatif)',
-                ),
-              ),
-              const SizedBox(height: 6),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.person_outline),
-                title: Text(client?.name ?? 'Client (facultatif)'),
-                onTap: () async {
-                  final c = await pickClient(ctx);
-                  if (c != null) set(() => client = c);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event_outlined),
-                title: Text(dayDate(day)),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: ctx,
-                    initialDate: day,
-                    firstDate: DateTime(now.year - 1),
-                    lastDate: DateTime(now.year + 3),
-                  );
-                  if (d != null) set(() => day = d);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.schedule),
-                title: Text(time.format(ctx)),
-                onTap: () async {
-                  final t = await showTimePicker(
-                    context: ctx,
-                    initialTime: time,
-                  );
-                  if (t != null) set(() => time = t);
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ajouter'),
-          ),
-        ],
-      ),
-    ),
-  );
-  if (ok != true || title.text.trim().isEmpty || !context.mounted) return;
-  await guarded(
-    context,
-    () => repo.addAppointment(
-      title: title.text,
-      at: DateTime(day.year, day.month, day.day, time.hour, time.minute),
-      contactId: client?.id,
-      place: place.text,
-    ),
-  );
-}
-
-class _AgendaTab extends StatefulWidget {
-  const _AgendaTab();
-  @override
-  State<_AgendaTab> createState() => _AgendaTabState();
-}
-
-class _AgendaTabState extends State<_AgendaTab> {
-  bool _past = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'agenda',
-        backgroundColor: Palette.green,
-        foregroundColor: Palette.text,
-        onPressed: () => addAppointment(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Rendez-vous'),
-      ),
-      body: Loader<List<AppointmentItem>>(
-        key: ValueKey(_past),
-        load: (r) {
-          final t = r.now();
-          return r.appointments(
-            from: _past ? null : DateTime(t.year, t.month, t.day),
-          );
-        },
-        builder: (context, list) {
-          final shown = _past ? list.reversed.toList() : list;
-          String? lastDay;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-            children: [
-              Row(
-                children: [
-                  ChoiceChip(
-                    label: const Text('À venir'),
-                    selected: !_past,
-                    onSelected: (_) => setState(() => _past = false),
-                  ),
-                  const SizedBox(width: 6),
-                  ChoiceChip(
-                    label: const Text('Passés aussi'),
-                    selected: _past,
-                    onSelected: (_) => setState(() => _past = true),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (shown.isEmpty)
-                const EmptyState(
-                  'Aucun rendez-vous. Notez ici vos interventions et '
-                  'chantiers pour ne rien oublier.',
-                  icon: Icons.event_available_outlined,
-                ),
-              for (final a in shown) ...[
-                if (dayDate(a.appointment.at) != lastDay)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
-                    child: Text(
-                      lastDay = dayDate(a.appointment.at),
-                      style: const TextStyle(
-                        color: Palette.muted,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                _AppointmentTile(a),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _AppointmentTile extends StatelessWidget {
-  const _AppointmentTile(this.a);
-  final AppointmentItem a;
-
-  @override
-  Widget build(BuildContext context) {
-    final repo = context.read<AppState>().repo;
-    final ap = a.appointment;
-    final hour =
-        '${ap.at.hour.toString().padLeft(2, '0')}:${ap.at.minute.toString().padLeft(2, '0')}';
-    final sub = [
-      dayDate(ap.at),
-      hour,
-      if (a.contact != null) a.contact!.name,
-      if (ap.place != null) ap.place!,
-    ].join(' · ');
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Palette.card,
-        borderRadius: BorderRadius.circular(16),
-        child: ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          leading: Checkbox(
-            value: ap.done,
-            onChanged: (v) =>
-                guarded(context, () => repo.setAppointmentDone(ap.id, v!)),
-          ),
-          title: Text(
-            ap.title,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              decoration: ap.done ? TextDecoration.lineThrough : null,
-              color: ap.done ? Palette.muted : Palette.text,
-            ),
-          ),
-          subtitle: Text(sub),
-          trailing: IconButton(
-            tooltip: 'Supprimer',
-            icon: const Icon(Icons.delete_outline, color: Palette.muted),
-            onPressed: () async {
-              if (await confirm(
-                    context,
-                    'Supprimer ce rendez-vous ?',
-                    ap.title,
-                    ok: 'Supprimer',
-                  ) &&
-                  context.mounted) {
-                await guarded(context, () => repo.deleteAppointment(ap.id));
-              }
-            },
-          ),
-        ),
       ),
     );
   }
