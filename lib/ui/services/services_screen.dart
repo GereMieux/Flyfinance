@@ -189,7 +189,7 @@ class _DashboardTab extends StatelessWidget {
           ),
           _BigButton(
             'Mon entreprise',
-            'Nom, téléphone, numéro Wave sur vos documents',
+            'Logo, coordonnées et modèles de vos documents',
             Icons.business_outlined,
             () => Navigator.of(
               context,

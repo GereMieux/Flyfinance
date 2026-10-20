@@ -6,6 +6,7 @@ import '../data/repository.dart';
 import 'search_screen.dart';
 import 'stock_screen.dart';
 import 'trash_screen.dart';
+import 'receipt_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -79,6 +80,10 @@ class SaleTile extends StatelessWidget {
               tooltip: 'Options de la vente',
               onSelected: (v) => _action(context, v),
               itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'receipt',
+                  child: Text('Reçu ou facture'),
+                ),
                 if (s.due > 0 && s.contact != null)
                   const PopupMenuItem(
                     value: 'pay',
@@ -98,7 +103,11 @@ class SaleTile extends StatelessWidget {
 
   Future<void> _action(BuildContext context, String v) async {
     final app = context.read<AppState>();
-    if (v == 'cancel') {
+    if (v == 'receipt') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ReceiptScreen(saleId: s.sale.id)),
+      );
+    } else if (v == 'cancel') {
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(

@@ -378,6 +378,9 @@ class Repository {
     return ids.length;
   });
 
+  Future<List<SaleDetail>> salesWithLines(List<SaleSummary> list) =>
+      _withLines(list);
+
   Future<List<SaleDetail>> _withLines(List<SaleSummary> list) async {
     final ids = [for (final s in list) s.sale.id];
     final rows = await (db.select(db.saleLines).join([

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import 'receipt_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -76,6 +77,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         if (!_order.contains(id)) _order.insert(0, id);
       }
     });
+  }
+
+  /// Pavé numérique : la quantité se tape d'un coup au lieu d'appuyer
+  /// plusieurs fois sur +.
+  Future<void> _typeQty(ProductStock s) async {
+    final v = await askQuantity(
+      context,
+      title: s.product.name,
+      unitPrice: _price(s.product),
+      initial: _qty[s.product.id] ?? 0,
+      max: s.qty,
+    );
+    if (v != null) _setQty(s, v);
   }
 
   /// Article choisi dans la barre de recherche : on en ajoute un au panier
@@ -469,6 +483,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ),
             // Les boutons − et la quantité n'apparaissent que pour les
             // articles déjà dans le panier : moins de boutons à l'écran.
+            // Toucher la quantité ouvre le pavé numérique.
             if (n > 0) ...[
               IconButton.outlined(
                 tooltip: 'Retirer un',
@@ -478,32 +493,31 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               ),
               InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: s.qty == 0
-                    ? null
-                    : () async {
-                        final v = await askNumber(
-                          context,
-                          title: 'Quantité de ${s.product.name}',
-                          hint: 'Maximum ${s.qty}',
-                          initial: n == 0 ? null : n,
-                        );
-                        if (v != null) _setQty(s, v);
-                      },
+                onTap: () => _typeQty(s),
                 child: SizedBox(
                   width: 44,
                   height: 48,
                   child: Center(
                     child: Text(
                       '$n',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
+                        color: Palette.mint,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Palette.mint,
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
+            ] else
+              IconButton(
+                tooltip: 'Taper la quantité',
+                iconSize: 26,
+                onPressed: s.qty == 0 ? null : () => _typeQty(s),
+                icon: Icon(Icons.dialpad, color: Palette.mint),
+              ),
             IconButton.filled(
               tooltip: 'Ajouter un',
               iconSize: 28,
@@ -658,7 +672,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         }
         contactId = _clientId;
       }
-      await app.repo.recordSale(
+      final saleId = await app.repo.recordSale(
         lines: [
           for (final s in d.stock)
             if ((_qty[s.product.id] ?? 0) > 0)
@@ -674,8 +688,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       );
       app.changed();
       if (!mounted) return;
-      toast(context, 'Vente enregistrée.');
-      Navigator.pop(context);
+      // Le reçu s'ouvre tout de suite : imprimer, partager ou terminer.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ReceiptScreen(saleId: saleId, justSold: true),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         toast(context, e.toString().replaceFirst(RegExp(r'^\w+Error: '), ''));
