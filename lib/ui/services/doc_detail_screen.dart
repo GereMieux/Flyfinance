@@ -6,16 +6,19 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app_state.dart';
 import '../../data/repository.dart';
 import '../../data/services_repository.dart';
+import '../../data/receipt_repository.dart';
 import '../../services/doc_pdf.dart';
+import '../../services/receipt_pdf.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'common.dart';
 import 'doc_editor_screen.dart';
 
 class _Detail {
-  _Detail(this.s, this.biz);
+  _Detail(this.s, this.biz, this.brand);
   final DocSummary s;
   final Map<String, String> biz;
+  final BrandSettings brand;
 }
 
 /// Un devis ou une facture : contenu, paiements et toutes les actions.
@@ -26,7 +29,8 @@ class DocDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Loader<_Detail>(
-      load: (r) async => _Detail(await r.doc(id), await r.businessInfo()),
+      load: (r) async =>
+          _Detail(await r.doc(id), await r.businessInfo(), await r.brand()),
       builder: (context, d) => _DetailView(d),
     );
   }
@@ -44,7 +48,7 @@ class _DetailView extends StatelessWidget {
   String get _fileName => '${s.doc.number}.pdf';
 
   Future<void> _sharePdf(BuildContext context) async {
-    final bytes = await buildDocPdf(s, d.biz);
+    final bytes = await buildDocPdf(s, d.biz, brand: d.brand);
     await Printing.sharePdf(bytes: bytes, filename: _fileName);
     if (s.isQuote && s.doc.status == 'brouillon' && context.mounted) {
       await guarded(
@@ -56,7 +60,7 @@ class _DetailView extends StatelessWidget {
 
   Future<void> _print() => Printing.layoutPdf(
     name: _fileName,
-    onLayout: (_) => buildDocPdf(s, d.biz),
+    onLayout: (_) => buildDocPdf(s, d.biz, brand: d.brand),
   );
 
   /// Ouvre WhatsApp avec le résumé déjà écrit ; rien ne part sans que

@@ -623,3 +623,209 @@ class AppearanceButton extends StatelessWidget {
     );
   }
 }
+
+/// Pavé numérique en bas de l'écran pour saisir une quantité, sans le
+/// clavier du téléphone. Renvoie la quantité choisie (0 pour retirer
+/// l'article) ou `null` si on ferme.
+Future<int?> askQuantity(
+  BuildContext context, {
+  required String title,
+  required int unitPrice,
+  int initial = 0,
+  int? max,
+}) => showModalBottomSheet<int>(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Palette.card,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  ),
+  builder: (_) => QuantityPad(
+    title: title,
+    unitPrice: unitPrice,
+    initial: initial,
+    max: max,
+  ),
+);
+
+class QuantityPad extends StatefulWidget {
+  const QuantityPad({
+    super.key,
+    required this.title,
+    required this.unitPrice,
+    this.initial = 0,
+    this.max,
+  });
+  final String title;
+  final int unitPrice;
+  final int initial;
+  final int? max;
+
+  @override
+  State<QuantityPad> createState() => _QuantityPadState();
+}
+
+class _QuantityPadState extends State<QuantityPad> {
+  late String _digits = widget.initial > 0 ? '${widget.initial}' : '';
+
+  /// Le premier chiffre tapé remplace la quantité affichée.
+  late bool _fresh = widget.initial > 0;
+
+  int get _value => int.tryParse(_digits) ?? 0;
+  bool get _tooMany => widget.max != null && _value > widget.max!;
+
+  void _tap(String k) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (k == '⌫') {
+        _digits = _fresh || _digits.isEmpty
+            ? ''
+            : _digits.substring(0, _digits.length - 1);
+      } else if (k == 'C') {
+        _digits = '';
+      } else {
+        final next = (_fresh ? '' : _digits) + k;
+        if (next.length <= 6) _digits = next.replaceFirst(RegExp(r'^0+'), '');
+      }
+      _fresh = false;
+    });
+  }
+
+  Widget _key(String k) => Expanded(
+    child: Padding(
+      padding: const EdgeInsets.all(5),
+      child: Material(
+        color: k == 'C' || k == '⌫' ? Palette.cardHigh : Palette.ground,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _tap(k),
+          child: SizedBox(
+            height: 58,
+            child: Center(
+              child: k == '⌫'
+                  ? Icon(Icons.backspace_outlined, color: Palette.text)
+                  : Text(
+                      k,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: k == 'C' ? Palette.amber : Palette.text,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final v = _value;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Palette.faint,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              widget.title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            Text(
+              widget.max == null
+                  ? fcfa(widget.unitPrice)
+                  : '${fcfa(widget.unitPrice)} · ${widget.max} en stock',
+              style: TextStyle(color: Palette.muted),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Palette.ground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _tooMany ? Palette.red : Palette.mint,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    _digits.isEmpty ? '0' : _digits,
+                    key: const ValueKey('qty-display'),
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: tabular,
+                      color: _digits.isEmpty ? Palette.faint : Palette.text,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _tooMany
+                        ? 'Maximum ${widget.max}'
+                        : '= ${fcfa(v * widget.unitPrice)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _tooMany ? Palette.red : Palette.mint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final row in const [
+              ['1', '2', '3'],
+              ['4', '5', '6'],
+              ['7', '8', '9'],
+              ['C', '0', '⌫'],
+            ])
+              Row(children: [for (final k in row) _key(k)]),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (widget.initial > 0) ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context, 0),
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Retirer'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    onPressed: v == 0 || _tooMany
+                        ? null
+                        : () => Navigator.pop(context, v),
+                    child: const Text('Valider'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

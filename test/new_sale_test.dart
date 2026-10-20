@@ -90,7 +90,16 @@ void main() {
     await tester.tap(find.text('À crédit'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Valider la vente'));
-    await settle();
+    // Le reçu s'ouvre aussitôt (son aperçu tourne en continu : pas de
+    // pumpAndSettle ici).
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    expect(find.text('Vente enregistrée · 15.000 FCFA'), findsOneWidget);
+    expect(find.text('Imprimer'), findsOneWidget);
 
     final sale = (await tester.runAsync(repo.sales))!.single;
     expect(sale.contact!.name, 'Awa Traoré');

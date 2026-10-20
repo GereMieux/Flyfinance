@@ -11,6 +11,7 @@ import 'credits_screen.dart';
 import 'day_sales_screen.dart';
 import 'new_sale_screen.dart';
 import 'sales_list_screen.dart';
+import 'services/business_screen.dart';
 import 'services/services_screen.dart';
 import 'stock_screen.dart';
 import 'trash_screen.dart';
@@ -132,6 +133,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Clients et fournisseurs',
                     'Carnet d’adresses, comptes, relances',
                     () => _open(const ContactsScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.receipt_long_outlined,
+                    Palette.purple,
+                    'Reçus et factures',
+                    'Logo, modèles, phrase en bas du ticket',
+                    () => _open(const BusinessScreen()),
                   ),
                 ],
               ),
