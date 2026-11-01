@@ -77,12 +77,16 @@ class ProductSales {
 
 /// Une ligne de vente avec le nom de l'article, pour le détail des ventes.
 class SaleLineDetail {
-  SaleLineDetail(this.product, this.qty, this.unitPrice);
+  SaleLineDetail(this.product, this.qty, this.unitPrice, {int? unitCost})
+    : unitCost = unitCost ?? product.cost;
   final Product product;
   final int qty;
   final int unitPrice;
+
+  /// Prix d'achat au moment de la vente.
+  final int unitCost;
   int get total => qty * unitPrice;
-  int get margin => qty * (unitPrice - product.cost);
+  int get margin => qty * (unitPrice - unitCost);
 }
 
 class SaleDetail {
@@ -148,7 +152,7 @@ class Repository {
 
   Future<List<Product>> products() =>
       (db.select(db.products)
-            ..where((p) => p.archived.equals(false))
+            ..where((p) => p.archived.equals(false) & p.adHoc.equals(false))
             ..orderBy([(p) => OrderingTerm.asc(p.name)]))
           .get();
 
@@ -230,6 +234,7 @@ class Repository {
     int? contactId,
     int paidNow = 0,
     String method = 'especes',
+    int? sellerId,
   }) async {
     if (lines.isEmpty) throw ArgumentError('La vente est vide.');
     final total = lines.fold<int>(0, (s, l) => s + l.total);
@@ -240,7 +245,7 @@ class Repository {
       throw ArgumentError('Une vente à crédit doit avoir un client.');
     }
     return db.transaction(() async {
-      for (final l in lines) {
+      for (final l in lines.where((l) => !l.product.adHoc)) {
         final available = await stockOf(l.product.id);
         if (l.qty > available) {
           throw StateError(
@@ -255,6 +260,7 @@ class Repository {
               contactId: Value(contactId),
               createdAt: now(),
               total: total,
+              sellerId: Value(sellerId),
             ),
           );
       for (final l in lines) {
@@ -266,8 +272,11 @@ class Repository {
                 productId: l.product.id,
                 qty: l.qty,
                 unitPrice: l.unitPrice,
+                unitCost: Value(l.product.cost),
               ),
             );
+        // Un article hors stock n'a pas de stock à faire sortir.
+        if (l.product.adHoc) continue;
         await _move(l.product.id, -l.qty, 'vente', saleId: saleId);
       }
       if (paidNow > 0) {
@@ -299,10 +308,18 @@ class Repository {
     final lines = await (db.select(
       db.saleLines,
     )..where((l) => l.saleId.equals(saleId))).get();
-    for (final l in lines) {
+    final adHoc = await _adHocIds();
+    for (final l in lines.where((l) => !adHoc.contains(l.productId))) {
       await _move(l.productId, l.qty, 'annulation', saleId: saleId);
     }
   });
+
+  Future<Set<int>> _adHocIds() async => {
+    for (final p in await (db.select(
+      db.products,
+    )..where((p) => p.adHoc.equals(true))).get())
+      p.id,
+  };
 
   Future<List<SaleSummary>> sales({DateTime? from, DateTime? to}) async {
     final q = db.select(db.sales).join([
@@ -390,7 +407,12 @@ class Repository {
     for (final r in rows) {
       final l = r.readTable(db.saleLines);
       (lines[l.saleId] ??= []).add(
-        SaleLineDetail(r.readTable(db.products), l.qty, l.unitPrice),
+        SaleLineDetail(
+          r.readTable(db.products),
+          l.qty,
+          l.unitPrice,
+          unitCost: l.unitCost,
+        ),
       );
     }
     return [for (final s in list) SaleDetail(s, lines[s.sale.id] ?? [])];
@@ -478,7 +500,8 @@ class Repository {
             ))
             .get();
     for (final r in lines) {
-      cost += r.readTable(db.saleLines).qty * r.readTable(db.products).cost;
+      final l = r.readTable(db.saleLines);
+      cost += l.qty * (l.unitCost ?? r.readTable(db.products).cost);
     }
     final pays =
         await (db.select(db.payments)..where(

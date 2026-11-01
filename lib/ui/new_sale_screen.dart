@@ -3,15 +3,29 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../data/database.dart';
+import '../data/management_repository.dart';
 import '../data/repository.dart';
+import 'management/sellers_screen.dart';
 import 'receipt_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
 class _SaleData {
-  _SaleData(this.stock, this.clients);
+  _SaleData(this.stock, this.clients, this.sellers, this.adHocNames);
   final List<ProductStock> stock;
   final List<Contact> clients;
+  final List<Seller> sellers;
+  final List<String> adHocNames;
+}
+
+/// Article vendu « hors stock » : acheté ailleurs, il ne touche pas au stock.
+class _AdHocLine {
+  _AdHocLine(this.name, this.qty, this.price, this.cost);
+  final String name;
+  final int qty;
+  final int price;
+  final int cost;
+  int get total => qty * price;
 }
 
 /// Choix proposé par la barre client : un client existant, ou un nom tapé
@@ -34,6 +48,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   /// Ordre d'ajout au panier, pour afficher le dernier article en haut.
   final _order = <int>[];
+  final _adHoc = <_AdHocLine>[];
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
   final _clientText = TextEditingController();
@@ -108,8 +123,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     return Loader<_SaleData>(
-      load: (r) async =>
-          _SaleData(await r.stock(), await r.contacts(kind: 'client')),
+      load: (r) async => _SaleData(
+        await r.stock(),
+        await r.contacts(kind: 'client'),
+        await r.sellers(),
+        await r.adHocNames(),
+      ),
       builder: (context, d) {
         final byId = {for (final s in d.stock) s.product.id: s};
         final cart = [
@@ -119,10 +138,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         final others = d.stock
             .where((s) => !_qty.containsKey(s.product.id))
             .toList();
-        final total = cart.fold<int>(
-          0,
-          (a, s) => a + _qty[s.product.id]! * _price(s.product),
-        );
+        final total =
+            cart.fold<int>(
+              0,
+              (a, s) => a + _qty[s.product.id]! * _price(s.product),
+            ) +
+            _adHoc.fold<int>(0, (a, l) => a + l.total);
         final paid = switch (_payMode) {
           'tout' => total,
           'moitie' => total ~/ 2,
@@ -133,6 +154,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           appBar: AppBar(
             title: const Text('Vendre'),
             actions: [
+              if (d.sellers.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () => chooseSeller(context),
+                  icon: const Icon(Icons.badge_outlined, size: 18),
+                  label: Text(app.seller?.name ?? 'Propriétaire'),
+                ),
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: FilterChip(
@@ -151,10 +178,28 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: _productBar(d),
+                child: Row(
+                  children: [
+                    Expanded(child: _productBar(d)),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: 'Article acheté ailleurs, hors stock',
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Palette.amber,
+                          side: BorderSide(color: Palette.amber),
+                          minimumSize: const Size(48, 52),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        onPressed: () => _addAdHoc(d),
+                        child: const Text('Hors stock'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Expanded(
-                child: d.stock.isEmpty
+                child: d.stock.isEmpty && _adHoc.isEmpty
                     ? const EmptyState(
                         'Aucun article. Ajoutez vos articles dans le Stock.',
                         icon: Icons.inventory_2_outlined,
@@ -162,10 +207,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         children: [
-                          if (cart.isNotEmpty) ...[
+                          if (cart.isNotEmpty || _adHoc.isNotEmpty) ...[
                             _header(
-                              'Panier · ${cart.length} article${cart.length > 1 ? 's' : ''}',
+                              'Panier · ${cart.length + _adHoc.length} article${cart.length + _adHoc.length > 1 ? 's' : ''}',
                             ),
+                            for (final l in _adHoc) _adHocTile(app, l),
                             for (final s in cart) _tile(s, inCart: true),
                             if (others.isNotEmpty) _header('Autres articles'),
                           ],
@@ -178,6 +224,144 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _adHocTile(AppState app, _AdHocLine l) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Panel(
+      color: Palette.amberSoft,
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  'Hors stock · ${l.qty} × ${app.money(l.price)}'
+                  '${l.cost > 0 ? ' · bénéfice ${app.money(l.qty * (l.price - l.cost))}' : ''}',
+                  style: TextStyle(color: Palette.amber, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            app.money(l.total),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          IconButton(
+            tooltip: 'Retirer',
+            icon: const Icon(Icons.close),
+            onPressed: () => setState(() => _adHoc.remove(l)),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  /// Vente d'un article acheté ailleurs : le stock ne bouge pas, le
+  /// bénéfice est compté.
+  Future<void> _addAdHoc(_SaleData d) async {
+    final name = TextEditingController();
+    final qty = TextEditingController(text: '1');
+    final cost = TextEditingController();
+    final price = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Palette.card,
+        title: const Text('Vente hors stock'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Article acheté ailleurs : le stock ne bouge pas, votre '
+                'bénéfice est compté.',
+                style: TextStyle(color: Palette.muted, fontSize: 13),
+              ),
+              const SizedBox(height: 10),
+              Autocomplete<String>(
+                optionsBuilder: (v) => v.text.isEmpty
+                    ? const []
+                    : d.adHocNames.where(
+                        (n) => normalize(n).contains(normalize(v.text)),
+                      ),
+                onSelected: (v) => name.text = v,
+                fieldViewBuilder: (ctx, c, f, _) {
+                  c.addListener(() => name.text = c.text);
+                  return TextField(
+                    controller: c,
+                    focusNode: f,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'Nom de l’article',
+                      hintText: 'ex. Lait Nido 900 g',
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: qty,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Quantité'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: cost,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Prix d’achat (l’unité)',
+                  suffixText: 'FCFA',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: price,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Prix de vente (l’unité)',
+                  suffixText: 'FCFA',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Ajouter au panier'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final q = int.tryParse(qty.text.trim()) ?? 0;
+    final p = parseAmount(price.text) ?? 0;
+    if (name.text.trim().isEmpty || q <= 0 || p <= 0) {
+      toast(context, 'Indiquez le nom, la quantité et le prix de vente.');
+      return;
+    }
+    setState(
+      () => _adHoc.insert(
+        0,
+        _AdHocLine(name.text.trim(), q, p, parseAmount(cost.text) ?? 0),
+      ),
     );
   }
 
@@ -674,6 +858,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       }
       final saleId = await app.repo.recordSale(
         lines: [
+          for (final l in _adHoc)
+            CartLine(
+              await app.repo.adHocProduct(
+                name: l.name,
+                price: l.price,
+                cost: l.cost,
+              ),
+              l.qty,
+              unitPrice: l.price,
+            ),
           for (final s in d.stock)
             if ((_qty[s.product.id] ?? 0) > 0)
               CartLine(
@@ -685,6 +879,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         contactId: contactId,
         paidNow: paid,
         method: _method,
+        sellerId: app.seller?.id,
       );
       app.changed();
       if (!mounted) return;

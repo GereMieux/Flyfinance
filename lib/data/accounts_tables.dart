@@ -17,6 +17,13 @@ class Purchases extends Table {
   TextColumn get reference => text().nullable()();
   TextColumn get note => text().nullable()();
   BoolColumn get cancelled => boolean().withDefault(const Constant(false))();
+
+  /// Date limite pour payer ce qui reste dû.
+  DateTimeColumn get dueDate => dateTime().nullable()();
+
+  /// 'date' : tout le reste à la date limite. 'ventes' : on verse la valeur
+  /// d'achat de ce qui se vend, et le reste à la date limite.
+  TextColumn get terms => text().withDefault(const Constant('date'))();
 }
 
 class PurchaseLines extends Table {

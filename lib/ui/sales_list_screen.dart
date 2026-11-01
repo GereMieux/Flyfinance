@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
+import '../data/management_repository.dart';
 import '../data/repository.dart';
+import 'management/common.dart';
 import 'search_screen.dart';
 import 'stock_screen.dart';
 import 'trash_screen.dart';
@@ -91,6 +93,11 @@ class SaleTile extends StatelessWidget {
                   ),
                 if (!cancelled)
                   const PopupMenuItem(
+                    value: 'return',
+                    child: Text('Retour d’article'),
+                  ),
+                if (!cancelled)
+                  const PopupMenuItem(
                     value: 'cancel',
                     child: Text('Annuler la vente'),
                   ),
@@ -132,6 +139,8 @@ class SaleTile extends StatelessWidget {
         await app.repo.cancelSale(s.sale.id);
         app.changed();
       }
+    } else if (v == 'return') {
+      await _return(context, app);
     } else if (v == 'pay') {
       final amount = await askNumber(
         context,
@@ -142,6 +151,118 @@ class SaleTile extends StatelessWidget {
       final applied = await app.repo.receivePayment(s.contact!.id, amount);
       app.changed();
       if (context.mounted) toast(context, '${fcfa(applied)} encaissés.');
+    }
+  }
+
+  /// Le client rapporte une partie de ses articles : ils reviennent en stock
+  /// et on lui rend l'argent payé en trop.
+  Future<void> _return(BuildContext context, AppState app) async {
+    final lines = await app.repo.saleLinesOf(s.sale.id);
+    if (!context.mounted) return;
+    final back = {for (final l in lines) l.$1.id: TextEditingController()};
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) {
+          var amount = 0;
+          for (final l in lines) {
+            final q = int.tryParse(back[l.$1.id]!.text.trim()) ?? 0;
+            amount += q * l.$1.unitPrice;
+          }
+          final newTotal = s.sale.total - amount;
+          final refund = s.paid > newTotal ? s.paid - newTotal : 0;
+          return AlertDialog(
+            backgroundColor: Palette.card,
+            title: const Text('Retour d’article'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Indiquez ce que le client rapporte : l’article revient '
+                    'en stock.',
+                    style: TextStyle(color: Palette.muted),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final l in lines)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${l.$2.name}\nvendu : ${l.$1.qty} × '
+                              '${app.money(l.$1.unitPrice)}',
+                            ),
+                          ),
+                          SizedBox(
+                            width: 70,
+                            child: TextField(
+                              controller: back[l.$1.id],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              onChanged: (_) => set(() {}),
+                              decoration: const InputDecoration(
+                                hintText: '0',
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const Divider(),
+                  AmountLine('Montant du retour', amount, strong: true),
+                  if (refund > 0)
+                    Text(
+                      'Argent à rendre au client : ${app.money(refund)}',
+                      style: TextStyle(
+                        color: Palette.amber,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Fermer'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Valider le retour'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    if (!await askOwnerPin(
+      context,
+      title: 'Confirmer le retour',
+      text: 'Tapez votre code secret pour valider le retour.',
+    )) {
+      return;
+    }
+    try {
+      final refund = await app.repo.returnItems(s.sale.id, {
+        for (final e in back.entries)
+          e.key: int.tryParse(e.value.text.trim()) ?? 0,
+      });
+      app.changed();
+      if (context.mounted) {
+        toast(
+          context,
+          refund > 0
+              ? 'Retour enregistré : rendez ${fcfa(refund)} au client'
+              : 'Retour enregistré, article remis en stock',
+        );
+      }
+    } on ArgumentError catch (e) {
+      if (context.mounted) toast(context, '${e.message}', error: true);
     }
   }
 }

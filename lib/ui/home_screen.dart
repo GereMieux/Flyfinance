@@ -3,12 +3,21 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../data/accounts_repository.dart';
+import '../data/database.dart';
+import '../data/management_repository.dart';
 import '../data/repository.dart';
 import 'accounts/contacts_screen.dart';
 import 'accounts/reminders_screen.dart';
 import 'agenda/agenda_screen.dart';
 import 'credits_screen.dart';
 import 'day_sales_screen.dart';
+import 'management/backup_screen.dart';
+import 'management/cash_screen.dart';
+import 'management/expenses_screen.dart';
+import 'management/inventory_screen.dart';
+import 'management/payment_plan_screen.dart';
+import 'management/reports_screen.dart';
+import 'management/sellers_screen.dart';
 import 'new_sale_screen.dart';
 import 'sales_list_screen.dart';
 import 'services/business_screen.dart';
@@ -31,6 +40,8 @@ class _Dashboard {
     this.monthStats,
     this.cancelledToday,
     this.reminders,
+    this.closed,
+    this.adHoc,
   );
   final PeriodStats stats;
   final List<int> bars;
@@ -45,6 +56,12 @@ class _Dashboard {
 
   /// Clients à relancer maintenant (délai et heure réglés dans Relances).
   final int reminders;
+
+  /// La caisse a déjà été clôturée aujourd'hui.
+  final bool closed;
+
+  /// Ventes hors stock du mois (null s'il n'y en a pas).
+  final AdHocSummary? adHoc;
 }
 
 class HomeScreen extends StatefulWidget {
@@ -80,6 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
       await repo.statsSince(DateTime(now.year, now.month)),
       await repo.cancelledSales(from: today),
       (await repo.remindersDue()).length,
+      await repo.closedToday(),
+      await repo.adHocThisMonth(),
     );
   }
 
@@ -141,6 +160,71 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Reçus et factures',
                     'Logo, modèles, phrase en bas du ticket',
                     () => _open(const BusinessScreen()),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 26),
+            const SectionTitle('Gestion'),
+            const SizedBox(height: 10),
+            Panel(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                children: [
+                  _space(
+                    Icons.point_of_sale_outlined,
+                    Palette.mint,
+                    'Caisse et comptabilité',
+                    'Journal, clôture du soir, bénéfice net',
+                    () => _open(const CashScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.payments_outlined,
+                    Palette.red,
+                    'Dépenses',
+                    'Loyer, électricité, transport…',
+                    () => _open(const ExpensesScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.insights_outlined,
+                    Palette.blue,
+                    'Rapports',
+                    'Meilleurs articles, clients, mois',
+                    () => _open(const ReportsScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.event_repeat_outlined,
+                    Palette.amber,
+                    'Plan de versements',
+                    'Échéances des fournisseurs',
+                    () => _open(const PaymentPlanScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.fact_check_outlined,
+                    Palette.purple,
+                    'Inventaire',
+                    'Compter le stock, voir les écarts',
+                    () => _open(const InventoryScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.badge_outlined,
+                    Palette.blue,
+                    'Vendeurs',
+                    'Qui a vendu quoi, avec un code',
+                    () => _open(const SellersScreen()),
+                  ),
+                  _divider(),
+                  _space(
+                    Icons.backup_outlined,
+                    Palette.grey,
+                    'Sauvegarde et export',
+                    'Copie de sécurité, fichiers Excel',
+                    () => _open(const BackupScreen()),
                   ),
                 ],
               ),
@@ -317,6 +401,33 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   List<Widget> _alerts(AppState app, _Dashboard d) => [
+    if (!d.closed && d.today.isNotEmpty && app.repo.now().hour >= 18) ...[
+      const SizedBox(height: 12),
+      AlertTile(
+        icon: Icons.nightlight_outlined,
+        color: Palette.mint,
+        background: Palette.mintSoft,
+        title: 'Fin de journée : comptez votre caisse',
+        subtitle: 'Clôturez et envoyez le rapport du jour',
+        onTap: () => _open(const CloseCashScreen()),
+      ),
+    ],
+    if (d.adHoc != null) ...[
+      const SizedBox(height: 12),
+      AlertTile(
+        icon: Icons.inventory_outlined,
+        color: Palette.amber,
+        background: Palette.amberSoft,
+        title:
+            '${d.adHoc!.count} vente${d.adHoc!.count > 1 ? 's' : ''} hors stock ce mois',
+        subtitle: d.adHoc!.often.isEmpty
+            ? '${d.adHoc!.names.join(', ')} · bénéfice ${app.money(d.adHoc!.profit)}'
+            : 'Souvent vendu : ${d.adHoc!.often.map((p) => p.name).join(', ')}. Le mettre en stock ?',
+        onTap: d.adHoc!.often.isEmpty
+            ? null
+            : () => _toStock(app, d.adHoc!.often),
+      ),
+    ],
     if (d.low.isNotEmpty) ...[
       const SizedBox(height: 12),
       AlertTile(
@@ -355,6 +466,37 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ],
   ];
+
+  Future<void> _toStock(AppState app, List<Product> often) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Palette.card,
+        title: const Text('Mettre en stock ?'),
+        content: Text(
+          '${often.map((p) => p.name).join(', ')} se vend souvent. '
+          'Ajoutez-le à votre stock pour suivre les quantités.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Plus tard'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Mettre en stock'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    for (final p in often) {
+      await app.repo.moveToStock(p.id);
+    }
+    app.changed();
+    if (mounted) toast(context, 'Ajouté au stock. Indiquez la quantité.');
+    if (mounted) _open(const StockScreen());
+  }
 
   Widget _divider() => Divider(height: 1, indent: 68, color: Palette.line);
 
