@@ -2,10 +2,12 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'accounts_tables.dart';
+import 'management_tables.dart';
 import 'notes_tables.dart';
 import 'services_tables.dart';
 
 export 'accounts_tables.dart';
+export 'management_tables.dart';
 export 'notes_tables.dart';
 export 'services_tables.dart';
 
@@ -23,6 +25,10 @@ class Products extends Table {
   /// Seuil sous lequel l'article est signalé « bientôt en rupture ».
   IntColumn get alertMin => integer().withDefault(const Constant(0))();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
+
+  /// Article vendu « hors stock » : acheté ailleurs, il n'a pas de stock et
+  /// n'apparaît pas dans la liste du stock.
+  BoolColumn get adHoc => boolean().withDefault(const Constant(false))();
 }
 
 /// Clients et fournisseurs (carnet d'adresses).
@@ -42,6 +48,9 @@ class Sales extends Table {
   DateTimeColumn get createdAt => dateTime()();
   IntColumn get total => integer()();
   BoolColumn get cancelled => boolean().withDefault(const Constant(false))();
+
+  /// Vendeur qui a fait la vente (aucun : le propriétaire).
+  IntColumn get sellerId => integer().nullable()();
 }
 
 class SaleLines extends Table {
@@ -50,6 +59,10 @@ class SaleLines extends Table {
   IntColumn get productId => integer().references(Products, #id)();
   IntColumn get qty => integer()();
   IntColumn get unitPrice => integer()();
+
+  /// Prix d'achat au moment de la vente (rien pour les ventes anciennes :
+  /// on prend alors le prix d'achat actuel de l'article).
+  IntColumn get unitCost => integer().nullable()();
 }
 
 /// Encaissements. `atSale` distingue l'acompte versé à la vente des
@@ -102,6 +115,10 @@ class StockMoves extends Table {
     Purchases,
     PurchaseLines,
     AccountEntries,
+    Expenses,
+    CashClosings,
+    Sellers,
+    Inventories,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -126,7 +143,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +169,27 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(purchaseLines);
         await m.createTable(accountEntries);
         await m.addColumn(stockMoves, stockMoves.purchaseId);
+      }
+      if (from < 5) {
+        // Dépenses, caisse, vendeurs, inventaires, hors stock, échéances.
+        await m.createTable(expenses);
+        await m.createTable(cashClosings);
+        await m.createTable(sellers);
+        await m.createTable(inventories);
+        // Les tables créées juste au-dessus ont déjà ces colonnes.
+        Future<void> add(TableInfo t, GeneratedColumn c) async {
+          final cols = await customSelect(
+            'PRAGMA table_info("${t.actualTableName}")',
+          ).get();
+          if (cols.any((r) => r.read<String>('name') == c.name)) return;
+          await m.addColumn(t, c);
+        }
+
+        await add(products, products.adHoc);
+        await add(sales, sales.sellerId);
+        await add(saleLines, saleLines.unitCost);
+        await add(purchases, purchases.dueDate);
+        await add(purchases, purchases.terms);
       }
     },
     beforeOpen: (details) async {

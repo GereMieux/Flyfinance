@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../voice/assistant.dart';
+import '../voice/wake.dart';
 import '../voice/voice_io.dart';
 import 'theme.dart';
 
@@ -31,6 +32,10 @@ class _AssistantScreenState extends State<AssistantScreen> {
   final _scroll = ScrollController();
   late final Assistant _assistant = Assistant(context.read<AppState>().repo);
   bool _listening = false;
+
+  /// Écoute continue : on dit « Hello Zara » puis sa demande.
+  bool _wake = false;
+  DateTime? _armedUntil;
   String _partial = '';
 
   static const _languages = {
@@ -48,6 +53,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
   @override
   void dispose() {
+    _wake = false;
     _voice.stop();
     _voice.silence();
     super.dispose();
@@ -107,8 +113,80 @@ class _AssistantScreenState extends State<AssistantScreen> {
     await _voice.speak(msg, lang: app.language, voice: app.voice);
   }
 
+  Future<void> _toggleWake() async {
+    if (_wake) {
+      setState(() {
+        _wake = false;
+        _partial = '';
+      });
+      await _voice.stop();
+      return;
+    }
+    if (_listening) await _voice.stop();
+    await _voice.silence();
+    if (!await _voice.init()) {
+      _noMic();
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _wake = true;
+      _listening = false;
+    });
+    _wakeLoop();
+  }
+
+  /// Tant que l'écran est ouvert et l'écoute activée : on écoute, et l'on ne
+  /// répond qu'aux phrases qui commencent par « Hello Zara ». Si l'on dit
+  /// seulement « Hello Zara », elle répond « Oui ? » et attend 9 secondes.
+  Future<void> _wakeLoop() async {
+    final app = context.read<AppState>();
+    while (_wake && mounted) {
+      final heard = await _voice.hear(
+        app.language,
+        onPartial: (s) {
+          if (mounted && _wake) setState(() => _partial = s);
+        },
+      );
+      if (!_wake || !mounted) break;
+      setState(() => _partial = '');
+      if (heard == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        continue;
+      }
+      final rest = afterWakeWord(heard);
+      final armed =
+          _armedUntil != null && DateTime.now().isBefore(_armedUntil!);
+      if (rest != null && rest.isNotEmpty) {
+        _armedUntil = null;
+        await _ask(rest);
+      } else if (rest != null) {
+        await _voice.speak('Oui ?', lang: app.language, voice: app.voice);
+        _armedUntil = DateTime.now().add(const Duration(seconds: 9));
+      } else if (armed) {
+        _armedUntil = null;
+        await _ask(heard);
+      }
+    }
+  }
+
+  void _noMic() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Micro indisponible. Autorisez le micro ou écrivez votre demande.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _mic() async {
     final app = context.read<AppState>();
+    if (_wake) {
+      setState(() => _wake = false);
+      await _voice.stop();
+    }
     if (_listening) {
       await _voice.stop();
       setState(() => _listening = false);
@@ -117,15 +195,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     await _voice.silence();
     final ok = await _voice.init();
     if (!ok) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Micro indisponible. Autorisez le micro ou écrivez votre demande.',
-            ),
-          ),
-        );
-      }
+      _noMic();
       return;
     }
     setState(() => _listening = true);
@@ -166,7 +236,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Assistant',
+                          'Zara',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -177,7 +247,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
                             Icon(Icons.circle, size: 8, color: Palette.mint),
                             const SizedBox(width: 6),
                             Text(
-                              'Prêt, même hors ligne',
+                              _wake
+                                  ? 'Dites « Hello Zara »…'
+                                  : 'Votre assistante, même hors ligne',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Palette.mint,
@@ -212,6 +284,20 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      avatar: Icon(
+                        _wake ? Icons.hearing : Icons.hearing_disabled,
+                        size: 18,
+                        color: _wake ? Palette.mint : Palette.muted,
+                      ),
+                      label: const Text('Hello Zara'),
+                      selected: _wake,
+                      showCheckmark: false,
+                      onSelected: (_) => _toggleWake(),
+                    ),
+                  ),
                   for (final l in _languages.entries)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -233,7 +319,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 40),
                       child: Text(
-                        'Parlez comme à un employé :\n« Vends 3 sacs de riz à Fatou, elle paie la moitié par Wave »',
+                        'Je suis Zara. Parlez-moi comme à une employée :\n« Vends 3 sacs de riz à Fatou, elle paie la moitié par Wave »',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Palette.muted,
@@ -431,6 +517,16 @@ class _AssistantScreenState extends State<AssistantScreen> {
             ),
           ],
         ),
+        if (_wake && _partial.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              _partial,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Palette.muted),
+            ),
+          ),
         if (_listening)
           Padding(
             padding: const EdgeInsets.only(top: 6),

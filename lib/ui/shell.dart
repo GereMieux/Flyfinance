@@ -55,7 +55,7 @@ class _ShellState extends State<Shell> {
           NavigationDestination(
             icon: const Icon(Icons.mic_none),
             selectedIcon: Icon(Icons.mic, color: Palette.amber),
-            label: 'Vocal',
+            label: 'Zara',
           ),
           const NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),

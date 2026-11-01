@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'data/database.dart';
 import 'data/repository.dart';
 import 'security/lock_service.dart';
 
@@ -80,6 +81,14 @@ class AppState extends ChangeNotifier {
   void setVoicePrefs({String? language, String? voice}) {
     if (language != null) this.language = language;
     if (voice != null) this.voice = voice;
+    notifyListeners();
+  }
+
+  /// Vendeur qui tient la caisse (aucun : le propriétaire). Il reste choisi
+  /// jusqu'à ce qu'on en change ou que l'application se ferme.
+  Seller? seller;
+  void setSeller(Seller? s) {
+    seller = s;
     notifyListeners();
   }
 
