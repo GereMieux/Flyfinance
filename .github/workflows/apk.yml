@@ -32,9 +32,20 @@ jobs:
           flutter-version: 3.47.7
           cache: true
 
+      # Garde la même clé de signature d'une construction à l'autre : le
+      # nouvel APK s'installe alors par-dessus l'ancien, sans perdre les
+      # données. Sans elle, chaque machine en crée une nouvelle et Android
+      # refuse la mise à jour.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: cle-signature-apercu-v1
+
       - run: flutter pub get
 
-      - run: flutter build apk --release
+      # Le numéro de construction augmente à chaque fois : Android accepte
+      # alors la nouvelle version comme une mise à jour.
+      - run: flutter build apk --release --build-number=$((1000 + ${{ github.run_number }}))
 
       - run: cp build/app/outputs/flutter-apk/app-release.apk flyfinance.apk
 
